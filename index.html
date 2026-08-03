@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>スキルシート管理システム 要件 | 2way-ses-system</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f6f8fa;
+    --fg: #1f2328;
+    --fg-muted: #59636e;
+    --border: #d1d9e0;
+    --accent: #0969da;
+    --accent-soft: #ddf4ff;
+    --warn-bg: #fff8c5;
+    --warn-border: #d4a72c;
+    --radius: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --bg-soft: #151b23;
+      --fg: #e6edf3;
+      --fg-muted: #9198a1;
+      --border: #3d444d;
+      --accent: #4493f8;
+      --accent-soft: #121d2f;
+      --warn-bg: #272115;
+      --warn-border: #9e6a03;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+                 "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+    line-height: 1.75;
+    font-size: 16px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 1.25rem 5rem; }
+
+  header.hero {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-soft);
+    padding: 2.5rem 1.25rem 2rem;
+    margin-bottom: 2.5rem;
+  }
+  header.hero .inner { max-width: 1180px; margin: 0 auto; }
+  .eyebrow {
+    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--fg-muted); margin: 0 0 .5rem; font-weight: 600;
+  }
+  h1 { font-size: 1.9rem; margin: 0 0 .75rem; line-height: 1.3; }
+  .lede { margin: 0; color: var(--fg-muted); max-width: 62ch; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.25rem;
+  }
+  .chip {
+    font-size: .8rem; padding: .2rem .7rem; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg-muted);
+  }
+  .chip.draft { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  .layout { display: grid; grid-template-columns: 220px 1fr; gap: 3rem; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 1.5rem; } nav.toc { position: static !important; } }
+
+  nav.toc {
+    position: sticky; top: 1.5rem;
+    font-size: .875rem;
+    border-left: 2px solid var(--border);
+    padding-left: 1rem;
+  }
+  nav.toc p { font-weight: 700; margin: 0 0 .6rem; font-size: .78rem;
+              letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+  nav.toc li { counter-increment: toc; margin: .3rem 0; }
+  nav.toc li::before { content: counter(toc) "."; color: var(--fg-muted); margin-right: .4rem; }
+  nav.toc a { color: var(--fg-muted); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+
+  section { margin-bottom: 3rem; scroll-margin-top: 1.5rem; }
+  h2 {
+    font-size: 1.35rem; margin: 0 0 1rem; padding-bottom: .4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1.05rem; margin: 1.75rem 0 .6rem; }
+  p { margin: 0 0 1rem; }
+  ul { margin: 0 0 1rem; padding-left: 1.4rem; }
+  li { margin: .2rem 0; }
+  strong { font-weight: 700; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .875em; background: var(--bg-soft); padding: .12em .4em;
+    border-radius: 4px; border: 1px solid var(--border);
+  }
+
+  .table-scroll { overflow-x: auto; margin: 0 0 1rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+  th, td { border: 1px solid var(--border); padding: .5rem .75rem; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); font-weight: 600; white-space: nowrap; }
+
+  .note {
+    background: var(--warn-bg); border: 1px solid var(--warn-border);
+    border-radius: var(--radius); padding: .9rem 1.1rem; margin: 0 0 1.25rem;
+  }
+  .note p:last-child { margin-bottom: 0; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+  .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.15rem; background: var(--bg-soft); }
+  .card h4 { margin: 0 0 .45rem; font-size: .95rem; }
+  .card p { margin: 0; font-size: .875rem; color: var(--fg-muted); }
+  .card .num { display: block; font-size: .75rem; color: var(--accent); font-weight: 700; margin-bottom: .25rem; }
+
+  ol.flow { counter-reset: step; list-style: none; padding: 0; margin: 0 0 1rem; }
+  ol.flow li {
+    counter-increment: step; position: relative; padding-left: 2.4rem; margin: .5rem 0;
+  }
+  ol.flow li::before {
+    content: counter(step); position: absolute; left: 0; top: .15rem;
+    width: 1.6rem; height: 1.6rem; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 700;
+    display: grid; place-items: center;
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 1rem; }
+  .tag {
+    font-size: .85rem; padding: .25rem .75rem; border-radius: 6px;
+    border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 500;
+  }
+
+  footer {
+    border-top: 1px solid var(--border); margin-top: 3rem; padding-top: 1.5rem;
+    font-size: .85rem; color: var(--fg-muted);
+  }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <p class="eyebrow">2way-ses-system / MVP</p>
+    <h1>スキルシート管理システム 要件</h1>
+    <p class="lede">
+      現在Excelで管理しているスキルシートをWebシステム上でDB管理へ移行するための要件をまとめたページです。
+      Excelの見た目をそのまま再現するのではなく、情報を構造化して管理することを前提とします。
+    </p>
+    <div class="meta">
+      <span class="chip draft">ドラフト（初版）</span>
+      <span class="chip">作成日: 2026-08-03</span>
+      <span class="chip">対象: MVP</span>
+      <span class="chip">社内資料</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="layout">
+
+  <nav class="toc">
+    <p>目次</p>
+    <ol>
+      <li><a href="#policy">基本方針</a></li>
+      <li><a href="#basic">基本情報</a></li>
+      <li><a href="#skills">スキル</a></li>
+      <li><a href="#quals">資格</a></li>
+      <li><a href="#careers">職歴</a></li>
+      <li><a href="#pr">自己PR</a></li>
+      <li><a href="#pdf">PDF</a></li>
+      <li><a href="#import">Excelインポート</a></li>
+      <li><a href="#todo">未確定事項</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+  <section id="policy">
+    <h2>1. 基本方針</h2>
+    <div class="note">
+      <p><strong>DB上の情報を正本とする。</strong> スキルシートは移行後、ブラウザ上で新規作成・参照・編集する。
+      Excelは既存スキルシートの初期移行元としてのみ利用し、<strong>Excelへの再出力は行わない。</strong></p>
+    </div>
+    <p>Excelの見た目をそのままWeb上に再現しない。情報を以下の単位に分けて管理する。</p>
+    <div class="cards">
+      <div class="card"><span class="num">01</span><h4>基本情報</h4><p>氏名、生年月日、居住地、就業状況、希望条件など</p></div>
+      <div class="card"><span class="num">02</span><h4>スキル</h4><p>スキル名、カテゴリ、経験期間、最終利用時期</p></div>
+      <div class="card"><span class="num">03</span><h4>資格</h4><p>資格名、取得年月、備考</p></div>
+      <div class="card"><span class="num">04</span><h4>職歴</h4><p>繰り返し追加可能。案件単位で使用技術・担当工程を保持</p></div>
+      <div class="card"><span class="num">05</span><h4>自己PR</h4><p>改行可能なテキスト</p></div>
+    </div>
+    <p>Excelは初期インポート用の<strong>入力アダプター</strong>とし、ブラウザ移行後はDBを正本とする。</p>
+  </section>
+
+  <section id="basic">
+    <h2>2. 基本情報</h2>
+    <p>管理候補項目は以下とする。</p>
+    <div class="table-scroll">
+    <table>
+      <thead><tr><th>項目</th><th>備考</th></tr></thead>
+      <tbody>
+        <tr><td>氏名</td><td></td></tr>
+        <tr><td>フリガナ</td><td></td></tr>
+        <tr><td>性別</td><td></td></tr>
+        <tr><td>生年月日</td><td></td></tr>
+        <tr><td>年齢</td><td>DBへ固定値として保存せず、生年月日から算出する</td></tr>
+        <tr><td>居住地</td><td>必要な粒度に分割（都道府県・市区町村など）</td></tr>
+        <tr><td>最寄駅</td><td></td></tr>
+        <tr><td>最終学歴</td><td></td></tr>
+        <tr><td>就業状況</td><td></td></tr>
+        <tr><td>希望単価</td><td></td></tr>
+        <tr><td>希望勤務地</td><td></td></tr>
+        <tr><td>リモート希望</td><td></td></tr>
+        <tr><td>転職意向</td><td></td></tr>
+        <tr><td>最終更新日</td><td></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <h3>補足</h3>
+    <ul>
+      <li><strong>年齢はDBへ固定値として保存しない。</strong> 生年月日から算出する。</li>
+      <li>住所全文が案件マッチングに不要な場合は、居住都道府県・市区町村・最寄駅など必要な粒度に分ける。</li>
+    </ul>
+  </section>
+
+  <section id="skills">
+    <h2>3. スキル</h2>
+    <p>以下の情報を管理する。</p>
+    <ul>
+      <li>スキル名</li>
+      <li>カテゴリ</li>
+      <li>経験期間</li>
+      <li>最終利用時期</li>
+      <li>表示順</li>
+      <li>備考</li>
+    </ul>
+    <h3>補足</h3>
+    <ul>
+      <li>MVPでは、経験期間や最終利用時期の<strong>自動集計は必須としない</strong>。</li>
+      <li>職歴上の使用技術から自動集計する方式は将来対応とする。</li>
+    </ul>
+  </section>
+
+  <section id="quals">
+    <h2>4. 資格</h2>
+    <p>以下を管理する。</p>
+    <ul>
+      <li>資格名</li>
+      <li>取得年月</li>
+      <li>備考</li>
+      <li>表示順</li>
+    </ul>
+  </section>
+
+  <section id="careers">
+    <h2>5. 職歴</h2>
+    <p>職歴は繰り返し追加可能な構造とする。職歴1件あたり、以下を管理する。</p>
+    <div class="table-scroll">
+    <table>
+      <thead><tr><th>項目</th><th>項目</th><th>項目</th></tr></thead>
+      <tbody>
+        <tr><td>表示順</td><td>プロジェクト名</td><td>使用環境</td></tr>
+        <tr><td>開始年月</td><td>業務内容</td><td>使用技術</td></tr>
+        <tr><td>終了年月</td><td>役割</td><td>担当工程</td></tr>
+        <tr><td>現在参画中フラグ</td><td>チーム人数</td><td>備考</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>担当工程の候補</h3>
+    <div class="tags">
+      <span class="tag">要件定義</span>
+      <span class="tag">基本設計</span>
+      <span class="tag">詳細設計</span>
+      <span class="tag">設計構築</span>
+      <span class="tag">製造</span>
+      <span class="tag">テスト</span>
+      <span class="tag">運用保守</span>
+      <span class="tag">サポート</span>
+    </div>
+
+    <h3>操作要件</h3>
+    <p>職歴は、以下ができる構成を想定する。</p>
+    <ul>
+      <li>追加</li>
+      <li>編集</li>
+      <li>削除</li>
+      <li>並び替え</li>
+      <li>複製</li>
+    </ul>
+  </section>
+
+  <section id="pr">
+    <h2>6. 自己PR</h2>
+    <ul>
+      <li>改行可能なテキスト形式とする</li>
+      <li>MVPではリッチテキストエディタは利用しない</li>
+    </ul>
+  </section>
+
+  <section id="pdf">
+    <h2>7. PDF</h2>
+    <p>外部提出、メール添付、印刷用としてPDFを利用する。</p>
+    <ul>
+      <li>MVPでは、専用PDF生成基盤を必須とせず、<strong>印刷用HTMLとブラウザのPDF保存機能で対応してもよい</strong></li>
+      <li>個人情報の公開範囲やマスキング機能は将来対応とする</li>
+    </ul>
+  </section>
+
+  <section id="import">
+    <h2>8. Excelインポート</h2>
+    <div class="note">
+      <p>対象は今回確認したExcelフォーマット<strong>1種類に限定する</strong>。複数フォーマットへの対応はMVP対象外。</p>
+    </div>
+    <h3>処理の流れ</h3>
+    <ol class="flow">
+      <li>Excelアップロード</li>
+      <li>Excel内容解析</li>
+      <li>解析結果をブラウザ上に表示</li>
+      <li>ユーザーが内容を確認、修正</li>
+      <li>DBへ登録</li>
+      <li>以降はブラウザ上で編集</li>
+    </ol>
+    <h3>前提</h3>
+    <ul>
+      <li>Excelファイル自体を正本として運用しない</li>
+      <li>Excelへの再出力は行わない</li>
+    </ul>
+  </section>
+
+  <section id="todo">
+    <h2>9. 未確定事項</h2>
+    <p>以下は本ページ作成時点で未確定であり、工程1（仕様固定）で決定する。</p>
+    <ul>
+      <li>対象Excelフォーマットの項目とセル位置の確定</li>
+      <li>スキルのカテゴリ体系（言語 / FW / DB / OS / ツール など）</li>
+      <li>就業状況、転職意向などの選択肢の定義</li>
+      <li>PDFレイアウトの確定</li>
+      <li>Excel解析ライブラリの選定（技術スタック確定後）</li>
+    </ul>
+    <div class="note">
+      <p>技術スタック（フロントエンド / バックエンド / DB / インフラ）は未決定。本ページでは確定させない。</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      本ページは <code>docs/requirements/skill-sheet-requirements.md</code> の内容をもとに作成した社内向け資料です。
+      確定仕様ではなく、MVP開始時点のドラフトです。
+    </p>
+    <p>2way-ses-system — 最終更新: 2026-08-03</p>
+  </footer>
+
+  </main>
+</div>
+</div>
+
+</body>
+</html>
