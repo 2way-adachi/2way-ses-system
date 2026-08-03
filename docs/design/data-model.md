@@ -40,6 +40,7 @@ MVP向けの論理データモデルを整理する。
 - nearest_station
 - education
 - employment_status
+- attendance_submission_source
 - desired_unit_price
 - preferred_location
 - remote_preference
@@ -53,6 +54,7 @@ MVP向けの論理データモデルを整理する。
 
 - 年齢は保持せず、`birth_date` から算出する
 - 住所は `prefecture` / `city` / `nearest_station` に分割して保持する
+- `attendance_submission_source` は参画中メンバーの勤怠提出元を保持する。候補値は `upper_company` / `current_member` を想定する
 
 ### 2.2 skill_sheet_careers
 
@@ -193,6 +195,7 @@ mail_import_histories （取り込み実行履歴）
 - 物理データモデル（型、桁、NULL制約、インデックス）
 - 論理削除の要否と方式
 - `status` の取りうる値
+- `attendance_submission_source` のNULL許容条件と未参画時の扱い
 - 単価の単位と表現（月額 / 時間単価、税区分）
 - DB製品の選定
 
