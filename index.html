@@ -4,360 +4,1036 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>スキルシート管理システム 要件 | 2way-ses-system</title>
+<title>スキルシート管理システム 画面モック | 2way-ses-system</title>
 <style>
-  :root {
-    --bg: #ffffff;
-    --bg-soft: #f6f8fa;
-    --fg: #1f2328;
-    --fg-muted: #59636e;
-    --border: #d1d9e0;
-    --accent: #0969da;
-    --accent-soft: #ddf4ff;
-    --warn-bg: #fff8c5;
-    --warn-border: #d4a72c;
-    --radius: 8px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0d1117;
-      --bg-soft: #151b23;
-      --fg: #e6edf3;
-      --fg-muted: #9198a1;
-      --border: #3d444d;
-      --accent: #4493f8;
-      --accent-soft: #121d2f;
-      --warn-bg: #272115;
-      --warn-border: #9e6a03;
-    }
-  }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
-                 "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
-    line-height: 1.75;
-    font-size: 16px;
-  }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 1.25rem 5rem; }
+:root{
+  --primary:#1e5eb8; --primary-dark:#17488d; --primary-soft:#e8f0fb;
+  --bg:#f4f6f9; --surface:#fff; --fg:#1f2328; --fg-muted:#5b6673;
+  --border:#dfe3e8; --border-strong:#c4cbd4;
+  --ok:#1a7f4b; --ok-soft:#e4f4ea; --warn:#a15c00; --warn-soft:#fdf3e2;
+  --danger:#b3261e; --danger-soft:#fceceb;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.1);
+  --shadow-lg:0 4px 12px rgba(16,24,40,.1);
+  --radius:8px; --header-h:56px; --sidebar-w:232px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg); font-size:14px; line-height:1.65;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;
+}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:var(--primary)}
 
-  header.hero {
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-soft);
-    padding: 2.5rem 1.25rem 2rem;
-    margin-bottom: 2.5rem;
-  }
-  header.hero .inner { max-width: 1180px; margin: 0 auto; }
-  .eyebrow {
-    font-size: .8rem; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--fg-muted); margin: 0 0 .5rem; font-weight: 600;
-  }
-  h1 { font-size: 1.9rem; margin: 0 0 .75rem; line-height: 1.3; }
-  .lede { margin: 0; color: var(--fg-muted); max-width: 62ch; }
-  .meta {
-    display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.25rem;
-  }
-  .chip {
-    font-size: .8rem; padding: .2rem .7rem; border-radius: 999px;
-    border: 1px solid var(--border); background: var(--bg); color: var(--fg-muted);
-  }
-  .chip.draft { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+/* ---------- mock banner ---------- */
+.mockbar{
+  background:#2b3441;color:#e9edf2;font-size:12.5px;padding:.45rem 1rem;
+  display:flex;gap:1rem;align-items:center;justify-content:center;flex-wrap:wrap;
+}
+.mockbar strong{color:#ffd66b}
+.mockbar a{color:#8fc0ff}
 
-  .layout { display: grid; grid-template-columns: 220px 1fr; gap: 3rem; align-items: start; }
-  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 1.5rem; } nav.toc { position: static !important; } }
+/* ---------- header ---------- */
+header.appbar{
+  position:sticky;top:0;z-index:30;height:var(--header-h);
+  background:var(--primary);color:#fff;display:flex;align-items:center;
+  padding:0 1.25rem;gap:1rem;box-shadow:var(--shadow);
+}
+.appbar .logo{font-weight:700;font-size:15.5px;letter-spacing:.02em;white-space:nowrap}
+.appbar .logo span{opacity:.75;font-weight:400;font-size:12.5px;margin-left:.5rem}
+.appbar .spacer{flex:1}
+.appbar .user{display:flex;align-items:center;gap:.55rem;font-size:13px}
+.avatar{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.22);
+  display:grid;place-items:center;font-size:12px;font-weight:700}
 
-  nav.toc {
-    position: sticky; top: 1.5rem;
-    font-size: .875rem;
-    border-left: 2px solid var(--border);
-    padding-left: 1rem;
-  }
-  nav.toc p { font-weight: 700; margin: 0 0 .6rem; font-size: .78rem;
-              letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); }
-  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
-  nav.toc li { counter-increment: toc; margin: .3rem 0; }
-  nav.toc li::before { content: counter(toc) "."; color: var(--fg-muted); margin-right: .4rem; }
-  nav.toc a { color: var(--fg-muted); text-decoration: none; }
-  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+/* ---------- layout ---------- */
+.shell{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:calc(100vh - var(--header-h))}
+nav.side{background:var(--surface);border-right:1px solid var(--border);padding:.85rem 0}
+.side .grp{padding:.55rem 1.15rem .3rem;font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--fg-muted)}
+.side a.item{
+  display:flex;align-items:center;gap:.65rem;padding:.55rem 1.15rem;
+  color:var(--fg);text-decoration:none;font-size:13.5px;border-left:3px solid transparent;
+}
+.side a.item:hover{background:var(--bg)}
+.side a.item.active{background:var(--primary-soft);border-left-color:var(--primary);color:var(--primary-dark);font-weight:600}
+.side a.item.disabled{color:#a6aeb8;pointer-events:none}
+.side .ico{width:18px;text-align:center;font-size:15px}
+.side .badge{margin-left:auto;font-size:10.5px;background:var(--bg);border:1px solid var(--border);
+  color:var(--fg-muted);padding:.05rem .4rem;border-radius:999px}
 
-  section { margin-bottom: 3rem; scroll-margin-top: 1.5rem; }
-  h2 {
-    font-size: 1.35rem; margin: 0 0 1rem; padding-bottom: .4rem;
-    border-bottom: 1px solid var(--border);
-  }
-  h3 { font-size: 1.05rem; margin: 1.75rem 0 .6rem; }
-  p { margin: 0 0 1rem; }
-  ul { margin: 0 0 1rem; padding-left: 1.4rem; }
-  li { margin: .2rem 0; }
-  strong { font-weight: 700; }
-  code {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    font-size: .875em; background: var(--bg-soft); padding: .12em .4em;
-    border-radius: 4px; border: 1px solid var(--border);
-  }
+main{padding:1.25rem 1.75rem 4rem;min-width:0}
+.crumb{font-size:12.5px;color:var(--fg-muted);margin-bottom:.7rem}
+.crumb a{color:var(--fg-muted);text-decoration:none}
+.crumb a:hover{text-decoration:underline}
+.crumb span{margin:0 .4rem;opacity:.5}
 
-  .table-scroll { overflow-x: auto; margin: 0 0 1rem; }
-  table { border-collapse: collapse; width: 100%; font-size: .92rem; }
-  th, td { border: 1px solid var(--border); padding: .5rem .75rem; text-align: left; vertical-align: top; }
-  th { background: var(--bg-soft); font-weight: 600; white-space: nowrap; }
+.pagehead{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.15rem;flex-wrap:wrap}
+.pagehead h1{font-size:20px;margin:0;line-height:1.4}
+.pagehead .sub{font-size:12.5px;color:var(--fg-muted);margin:.15rem 0 0}
+.pagehead .acts{margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap}
 
-  .note {
-    background: var(--warn-bg); border: 1px solid var(--warn-border);
-    border-radius: var(--radius); padding: .9rem 1.1rem; margin: 0 0 1.25rem;
-  }
-  .note p:last-child { margin-bottom: 0; }
+/* ---------- buttons ---------- */
+.btn{
+  border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);
+  padding:.42rem .9rem;border-radius:6px;font-size:13px;font-weight:500;
+  display:inline-flex;align-items:center;gap:.4rem;transition:.12s;white-space:nowrap;
+}
+.btn:hover{background:var(--bg)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.primary:hover{background:var(--primary-dark)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--primary)}
+.btn.ghost:hover{background:var(--primary-soft)}
+.btn.danger{color:var(--danger);border-color:var(--border-strong)}
+.btn.danger:hover{background:var(--danger-soft)}
+.btn.sm{padding:.22rem .55rem;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
-  .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.15rem; background: var(--bg-soft); }
-  .card h4 { margin: 0 0 .45rem; font-size: .95rem; }
-  .card p { margin: 0; font-size: .875rem; color: var(--fg-muted); }
-  .card .num { display: block; font-size: .75rem; color: var(--accent); font-weight: 700; margin-bottom: .25rem; }
+/* ---------- card ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);margin-bottom:1.15rem;overflow:hidden}
+.card>.hd{padding:.75rem 1.1rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.6rem;background:#fafbfc}
+.card>.hd h2{font-size:14px;margin:0;font-weight:700}
+.card>.hd .acts{margin-left:auto;display:flex;gap:.4rem}
+.card>.bd{padding:1.1rem}
+.card>.bd.flush{padding:0}
 
-  ol.flow { counter-reset: step; list-style: none; padding: 0; margin: 0 0 1rem; }
-  ol.flow li {
-    counter-increment: step; position: relative; padding-left: 2.4rem; margin: .5rem 0;
-  }
-  ol.flow li::before {
-    content: counter(step); position: absolute; left: 0; top: .15rem;
-    width: 1.6rem; height: 1.6rem; border-radius: 50%;
-    background: var(--accent); color: #fff; font-size: .8rem; font-weight: 700;
-    display: grid; place-items: center;
-  }
+/* ---------- filter bar ---------- */
+.filters{display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:.25rem;min-width:0}
+.field label{font-size:11.5px;color:var(--fg-muted);font-weight:600}
+.ctl{
+  border:1px solid var(--border-strong);border-radius:6px;padding:.4rem .6rem;
+  background:var(--surface);font-size:13px;min-width:150px;
+}
+.ctl:focus{outline:2px solid var(--primary-soft);border-color:var(--primary)}
+textarea.ctl{min-height:110px;resize:vertical;width:100%;line-height:1.7}
 
-  .tags { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 1rem; }
-  .tag {
-    font-size: .85rem; padding: .25rem .75rem; border-radius: 6px;
-    border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 500;
-  }
+/* ---------- table ---------- */
+.tbl-scroll{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+table.tbl th,table.tbl td{padding:.6rem .85rem;text-align:left;border-bottom:1px solid var(--border);vertical-align:middle}
+table.tbl th{background:#fafbfc;font-size:11.5px;color:var(--fg-muted);font-weight:700;
+  letter-spacing:.03em;white-space:nowrap;position:sticky;top:0}
+table.tbl tbody tr:hover{background:var(--primary-soft)}
+table.tbl tbody tr{cursor:pointer}
+table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.who{display:flex;align-items:center;gap:.6rem}
+.who .av{width:30px;height:30px;border-radius:50%;background:var(--primary-soft);color:var(--primary-dark);
+  display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.who .nm{font-weight:600}
+.who .kn{font-size:11px;color:var(--fg-muted);line-height:1.3}
 
-  footer {
-    border-top: 1px solid var(--border); margin-top: 3rem; padding-top: 1.5rem;
-    font-size: .85rem; color: var(--fg-muted);
-  }
-  footer a { color: var(--accent); }
+/* ---------- chips / tags ---------- */
+.chip{display:inline-flex;align-items:center;gap:.3rem;font-size:11.5px;padding:.1rem .55rem;
+  border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--fg-muted);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);border-color:#b7e0c6;color:var(--ok)}
+.chip.warn{background:var(--warn-soft);border-color:#eccb95;color:var(--warn)}
+.chip.pri{background:var(--primary-soft);border-color:#bcd5f2;color:var(--primary-dark)}
+.taglist{display:flex;flex-wrap:wrap;gap:.35rem}
+.tag{font-size:12px;padding:.15rem .6rem;border-radius:5px;background:var(--primary-soft);
+  color:var(--primary-dark);border:1px solid #cfe0f6;white-space:nowrap}
+.tag .yr{opacity:.7;font-size:11px;margin-left:.25rem}
+.tag.gray{background:var(--bg);border-color:var(--border);color:var(--fg-muted)}
+
+/* ---------- definition grid ---------- */
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0 1.5rem}
+.dl .row{display:grid;grid-template-columns:8.5rem 1fr;gap:.5rem;padding:.42rem 0;border-bottom:1px dashed var(--border);font-size:13px}
+.dl .row dt{color:var(--fg-muted);font-size:12px;margin:0}
+.dl .row dd{margin:0;word-break:break-word}
+.calc{font-size:10.5px;color:var(--ok);background:var(--ok-soft);border:1px solid #b7e0c6;
+  padding:0 .3rem;border-radius:3px;margin-left:.35rem;vertical-align:1px}
+
+/* ---------- career ---------- */
+.career{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:.9rem;background:var(--surface)}
+.career>.top{display:flex;align-items:center;gap:.7rem;padding:.65rem .9rem;background:#fafbfc;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.career .no{width:22px;height:22px;border-radius:5px;background:var(--primary);color:#fff;
+  font-size:11.5px;font-weight:700;display:grid;place-items:center;flex:none}
+.career .term{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--fg-muted);white-space:nowrap}
+.career .pjname{font-weight:700;font-size:13.5px}
+.career .top .acts{margin-left:auto;display:flex;gap:.3rem}
+.career>.bd{padding:.85rem .9rem}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:.15rem;border-bottom:1px solid var(--border);margin-bottom:1.15rem;overflow-x:auto}
+.tabs button{
+  border:none;background:none;padding:.65rem 1.1rem;font-size:13.5px;color:var(--fg-muted);
+  border-bottom:2px solid transparent;font-weight:500;white-space:nowrap;
+}
+.tabs button:hover{color:var(--fg);background:var(--bg)}
+.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700}
+
+/* ---------- stepper ---------- */
+.stepper{display:flex;align-items:center;gap:.5rem;margin-bottom:1.4rem;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:.5rem;font-size:12.5px;color:var(--fg-muted)}
+.step .dot{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border-strong);
+  display:grid;place-items:center;font-size:11.5px;font-weight:700;background:var(--surface)}
+.step.active{color:var(--primary-dark);font-weight:700}
+.step.active .dot{background:var(--primary);border-color:var(--primary);color:#fff}
+.step.done .dot{background:var(--ok);border-color:var(--ok);color:#fff}
+.step.done{color:var(--ok)}
+.stepline{flex:1;height:1px;background:var(--border-strong);min-width:18px;max-width:56px}
+
+.drop{
+  border:2px dashed var(--border-strong);border-radius:var(--radius);padding:2.4rem 1rem;
+  text-align:center;background:#fafbfc;color:var(--fg-muted);
+}
+.drop .big{font-size:28px;margin-bottom:.4rem}
+.drop strong{color:var(--fg)}
+
+/* ---------- notes ---------- */
+.note{border-radius:6px;padding:.65rem .9rem;font-size:12.5px;margin-bottom:1rem;border:1px solid}
+.note.info{background:var(--primary-soft);border-color:#bcd5f2;color:var(--primary-dark)}
+.note.warn{background:var(--warn-soft);border-color:#eccb95;color:var(--warn)}
+.note p{margin:0}
+.empty{padding:2.5rem 1rem;text-align:center;color:var(--fg-muted);font-size:13px}
+.pager{display:flex;align-items:center;gap:.5rem;padding:.7rem 1.1rem;font-size:12.5px;color:var(--fg-muted);border-top:1px solid var(--border)}
+.pager .spacer{flex:1}
+.pre{white-space:pre-wrap;font-size:13px;line-height:1.85;margin:0}
+
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,90px);
+  background:#2b3441;color:#fff;padding:.6rem 1.1rem;border-radius:6px;font-size:13px;
+  box-shadow:var(--shadow-lg);opacity:0;transition:.25s;z-index:80;pointer-events:none;max-width:90vw;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.hidden{display:none !important}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  nav.side{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding:.4rem}
+  .side .grp{display:none}
+  .side a.item{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;padding:.5rem .8rem}
+  .side a.item.active{border-left:none;border-bottom-color:var(--primary)}
+  .side .badge{display:none}
+  main{padding:1rem}
+}
+@media print{
+  .mockbar,header.appbar,nav.side,.pagehead .acts,.crumb,.card>.hd .acts{display:none !important}
+  .shell{grid-template-columns:1fr}
+  body{background:#fff}
+  .card{box-shadow:none;break-inside:avoid}
+}
 </style>
 </head>
 <body>
 
-<header class="hero">
-  <div class="inner">
-    <p class="eyebrow">2way-ses-system / MVP</p>
-    <h1>スキルシート管理システム 要件</h1>
-    <p class="lede">
-      現在Excelで管理しているスキルシートをWebシステム上でDB管理へ移行するための要件をまとめたページです。
-      Excelの見た目をそのまま再現するのではなく、情報を構造化して管理することを前提とします。
-    </p>
-    <div class="meta">
-      <span class="chip draft">ドラフト（初版）</span>
-      <span class="chip">作成日: 2026-08-03</span>
-      <span class="chip">対象: MVP</span>
-      <span class="chip">社内資料</span>
-    </div>
-  </div>
+<div class="mockbar">
+  <span><strong>画面モック</strong>／ダミーデータで動作します。保存・送信は行われません。</span>
+  <a href="requirements.html">元の要件ページを見る</a>
+</div>
+
+<header class="appbar">
+  <div class="logo">SES管理システム<span>スキルシート管理</span></div>
+  <div class="spacer"></div>
+  <div class="user"><span>営業部 田中</span><div class="avatar">田</div></div>
 </header>
 
-<div class="wrap">
-<div class="layout">
-
-  <nav class="toc">
-    <p>目次</p>
-    <ol>
-      <li><a href="#policy">基本方針</a></li>
-      <li><a href="#basic">基本情報</a></li>
-      <li><a href="#skills">スキル</a></li>
-      <li><a href="#quals">資格</a></li>
-      <li><a href="#careers">職歴</a></li>
-      <li><a href="#pr">自己PR</a></li>
-      <li><a href="#pdf">PDF</a></li>
-      <li><a href="#import">Excelインポート</a></li>
-      <li><a href="#todo">未確定事項</a></li>
-    </ol>
+<div class="shell">
+  <nav class="side">
+    <div class="grp">スキルシート</div>
+    <a class="item active" href="#" data-nav="list"><span class="ico">▤</span>スキルシート一覧<span class="badge" id="navCount">4</span></a>
+    <a class="item" href="#" data-nav="import"><span class="ico">⇪</span>Excelインポート</a>
+    <div class="grp">案件（MVP・別担当）</div>
+    <a class="item disabled" href="#"><span class="ico">▦</span>案件一覧<span class="badge">未実装</span></a>
+    <a class="item disabled" href="#"><span class="ico">✉</span>メール取り込み<span class="badge">未実装</span></a>
+    <div class="grp">その他</div>
+    <a class="item disabled" href="#"><span class="ico">⇄</span>仮マッチング<span class="badge">余力時</span></a>
   </nav>
 
-  <main>
-
-  <section id="policy">
-    <h2>1. 基本方針</h2>
-    <div class="note">
-      <p><strong>DB上の情報を正本とする。</strong> スキルシートは移行後、ブラウザ上で新規作成・参照・編集する。
-      Excelは既存スキルシートの初期移行元としてのみ利用し、<strong>Excelへの再出力は行わない。</strong></p>
-    </div>
-    <p>Excelの見た目をそのままWeb上に再現しない。情報を以下の単位に分けて管理する。</p>
-    <div class="cards">
-      <div class="card"><span class="num">01</span><h4>基本情報</h4><p>氏名、生年月日、居住地、就業状況、希望条件など</p></div>
-      <div class="card"><span class="num">02</span><h4>スキル</h4><p>スキル名、カテゴリ、経験期間、最終利用時期</p></div>
-      <div class="card"><span class="num">03</span><h4>資格</h4><p>資格名、取得年月、備考</p></div>
-      <div class="card"><span class="num">04</span><h4>職歴</h4><p>繰り返し追加可能。案件単位で使用技術・担当工程を保持</p></div>
-      <div class="card"><span class="num">05</span><h4>自己PR</h4><p>改行可能なテキスト</p></div>
-    </div>
-    <p>Excelは初期インポート用の<strong>入力アダプター</strong>とし、ブラウザ移行後はDBを正本とする。</p>
-  </section>
-
-  <section id="basic">
-    <h2>2. 基本情報</h2>
-    <p>管理候補項目は以下とする。</p>
-    <div class="table-scroll">
-    <table>
-      <thead><tr><th>項目</th><th>備考</th></tr></thead>
-      <tbody>
-        <tr><td>氏名</td><td></td></tr>
-        <tr><td>フリガナ</td><td></td></tr>
-        <tr><td>性別</td><td></td></tr>
-        <tr><td>生年月日</td><td></td></tr>
-        <tr><td>年齢</td><td>DBへ固定値として保存せず、生年月日から算出する</td></tr>
-        <tr><td>居住地</td><td>必要な粒度に分割（都道府県・市区町村など）</td></tr>
-        <tr><td>最寄駅</td><td></td></tr>
-        <tr><td>最終学歴</td><td></td></tr>
-        <tr><td>就業状況</td><td></td></tr>
-        <tr><td>希望単価</td><td></td></tr>
-        <tr><td>希望勤務地</td><td></td></tr>
-        <tr><td>リモート希望</td><td></td></tr>
-        <tr><td>転職意向</td><td></td></tr>
-        <tr><td>最終更新日</td><td></td></tr>
-      </tbody>
-    </table>
-    </div>
-    <h3>補足</h3>
-    <ul>
-      <li><strong>年齢はDBへ固定値として保存しない。</strong> 生年月日から算出する。</li>
-      <li>住所全文が案件マッチングに不要な場合は、居住都道府県・市区町村・最寄駅など必要な粒度に分ける。</li>
-    </ul>
-  </section>
-
-  <section id="skills">
-    <h2>3. スキル</h2>
-    <p>以下の情報を管理する。</p>
-    <ul>
-      <li>スキル名</li>
-      <li>カテゴリ</li>
-      <li>経験期間</li>
-      <li>最終利用時期</li>
-      <li>表示順</li>
-      <li>備考</li>
-    </ul>
-    <h3>補足</h3>
-    <ul>
-      <li>MVPでは、経験期間や最終利用時期の<strong>自動集計は必須としない</strong>。</li>
-      <li>職歴上の使用技術から自動集計する方式は将来対応とする。</li>
-    </ul>
-  </section>
-
-  <section id="quals">
-    <h2>4. 資格</h2>
-    <p>以下を管理する。</p>
-    <ul>
-      <li>資格名</li>
-      <li>取得年月</li>
-      <li>備考</li>
-      <li>表示順</li>
-    </ul>
-  </section>
-
-  <section id="careers">
-    <h2>5. 職歴</h2>
-    <p>職歴は繰り返し追加可能な構造とする。職歴1件あたり、以下を管理する。</p>
-    <div class="table-scroll">
-    <table>
-      <thead><tr><th>項目</th><th>項目</th><th>項目</th></tr></thead>
-      <tbody>
-        <tr><td>表示順</td><td>プロジェクト名</td><td>使用環境</td></tr>
-        <tr><td>開始年月</td><td>業務内容</td><td>使用技術</td></tr>
-        <tr><td>終了年月</td><td>役割</td><td>担当工程</td></tr>
-        <tr><td>現在参画中フラグ</td><td>チーム人数</td><td>備考</td></tr>
-      </tbody>
-    </table>
-    </div>
-
-    <h3>担当工程の候補</h3>
-    <div class="tags">
-      <span class="tag">要件定義</span>
-      <span class="tag">基本設計</span>
-      <span class="tag">詳細設計</span>
-      <span class="tag">設計構築</span>
-      <span class="tag">製造</span>
-      <span class="tag">テスト</span>
-      <span class="tag">運用保守</span>
-      <span class="tag">サポート</span>
-    </div>
-
-    <h3>操作要件</h3>
-    <p>職歴は、以下ができる構成を想定する。</p>
-    <ul>
-      <li>追加</li>
-      <li>編集</li>
-      <li>削除</li>
-      <li>並び替え</li>
-      <li>複製</li>
-    </ul>
-  </section>
-
-  <section id="pr">
-    <h2>6. 自己PR</h2>
-    <ul>
-      <li>改行可能なテキスト形式とする</li>
-      <li>MVPではリッチテキストエディタは利用しない</li>
-    </ul>
-  </section>
-
-  <section id="pdf">
-    <h2>7. PDF</h2>
-    <p>外部提出、メール添付、印刷用としてPDFを利用する。</p>
-    <ul>
-      <li>MVPでは、専用PDF生成基盤を必須とせず、<strong>印刷用HTMLとブラウザのPDF保存機能で対応してもよい</strong></li>
-      <li>個人情報の公開範囲やマスキング機能は将来対応とする</li>
-    </ul>
-  </section>
-
-  <section id="import">
-    <h2>8. Excelインポート</h2>
-    <div class="note">
-      <p>対象は今回確認したExcelフォーマット<strong>1種類に限定する</strong>。複数フォーマットへの対応はMVP対象外。</p>
-    </div>
-    <h3>処理の流れ</h3>
-    <ol class="flow">
-      <li>Excelアップロード</li>
-      <li>Excel内容解析</li>
-      <li>解析結果をブラウザ上に表示</li>
-      <li>ユーザーが内容を確認、修正</li>
-      <li>DBへ登録</li>
-      <li>以降はブラウザ上で編集</li>
-    </ol>
-    <h3>前提</h3>
-    <ul>
-      <li>Excelファイル自体を正本として運用しない</li>
-      <li>Excelへの再出力は行わない</li>
-    </ul>
-  </section>
-
-  <section id="todo">
-    <h2>9. 未確定事項</h2>
-    <p>以下は本ページ作成時点で未確定であり、工程1（仕様固定）で決定する。</p>
-    <ul>
-      <li>対象Excelフォーマットの項目とセル位置の確定</li>
-      <li>スキルのカテゴリ体系（言語 / FW / DB / OS / ツール など）</li>
-      <li>就業状況、転職意向などの選択肢の定義</li>
-      <li>PDFレイアウトの確定</li>
-      <li>Excel解析ライブラリの選定（技術スタック確定後）</li>
-    </ul>
-    <div class="note">
-      <p>技術スタック（フロントエンド / バックエンド / DB / インフラ）は未決定。本ページでは確定させない。</p>
-    </div>
-  </section>
-
-  <footer>
-    <p>
-      本ページは <code>docs/requirements/skill-sheet-requirements.md</code> の内容をもとに作成した社内向け資料です。
-      確定仕様ではなく、MVP開始時点のドラフトです。
-    </p>
-    <p>2way-ses-system — 最終更新: 2026-08-03</p>
-  </footer>
-
-  </main>
-</div>
+  <main id="main"></main>
 </div>
 
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   ダミーデータ（要件の管理項目に対応）
+   ========================================================= */
+const PHASES = ["要件定義","基本設計","詳細設計","設計構築","製造","テスト","運用保守","サポート"];
+
+const SHEETS = [
+  {
+    id:1, code:"EMP-0012", name:"佐藤 健一", kana:"サトウ ケンイチ", gender:"男性",
+    birth:"1990-04-12", pref:"東京都", city:"世田谷区", station:"三軒茶屋",
+    education:"○○大学 工学部 情報工学科 卒業", empStatus:"稼働中",
+    price:"70万円", prefLoc:"東京23区", remote:"週3リモート希望",
+    intention:"良い案件があれば", updated:"2026-07-28", status:"公開",
+    skills:[
+      {name:"Java",cat:"言語",months:96,last:"2026-07"},
+      {name:"Spring Boot",cat:"FW",months:72,last:"2026-07"},
+      {name:"PostgreSQL",cat:"DB",months:60,last:"2026-07"},
+      {name:"AWS",cat:"インフラ",months:36,last:"2026-07"},
+      {name:"JavaScript",cat:"言語",months:24,last:"2024-03"}
+    ],
+    quals:[
+      {name:"基本情報技術者",date:"2013-04",note:""},
+      {name:"AWS Certified Solutions Architect – Associate",date:"2022-09",note:""}
+    ],
+    careers:[
+      {start:"2023-04",end:null,current:true,project:"金融系Webシステム刷新",
+       desc:"勘定系サブシステムのWeb API再構築。要件整理からリリースまで担当。",
+       role:"チームリーダー",team:8,env:"AWS(ECS/RDS) / Linux",
+       tech:"Java, Spring Boot, PostgreSQL, Docker",
+       phases:["要件定義","基本設計","詳細設計","製造","テスト"],remarks:""},
+      {start:"2020-10",end:"2023-03",current:false,project:"物流管理システム保守開発",
+       desc:"既存システムの機能追加・障害対応。バッチ処理の性能改善を主導。",
+       role:"サブリーダー",team:5,env:"オンプレLinux / Oracle",
+       tech:"Java, Spring, Oracle, Shell",
+       phases:["詳細設計","製造","テスト","運用保守"],remarks:"性能改善で処理時間を1/3に短縮"},
+      {start:"2017-04",end:"2020-09",current:false,project:"社内基幹システム開発",
+       desc:"受発注管理機能の設計・製造・テスト。",
+       role:"メンバー",team:12,env:"Windows Server / SQL Server",
+       tech:"Java, JSP, SQL Server",
+       phases:["詳細設計","製造","テスト"],remarks:""}
+    ],
+    pr:"金融・物流領域を中心に9年間、Javaによる業務システム開発に従事してきました。\n直近3年はチームリーダーとして8名規模のチームを牽引し、要件定義からリリースまで一貫して担当しています。\n\n特に性能改善・設計品質の観点でのレビューを得意としており、既存システムの課題を整理して改善提案を行うことに強みがあります。\nAWS環境でのコンテナ運用経験もあり、インフラ面まで含めた提案が可能です。"
+  },
+  {
+    id:2, code:"EMP-0031", name:"鈴木 美咲", kana:"スズキ ミサキ", gender:"女性",
+    birth:"1995-11-03", pref:"神奈川県", city:"横浜市港北区", station:"新横浜",
+    education:"△△大学 情報学部 卒業", empStatus:"待機中",
+    price:"60万円", prefLoc:"神奈川・東京", remote:"フルリモート希望",
+    intention:"積極的に検討", updated:"2026-08-01", status:"公開",
+    skills:[
+      {name:"TypeScript",cat:"言語",months:54,last:"2026-06"},
+      {name:"React",cat:"FW",months:54,last:"2026-06"},
+      {name:"Next.js",cat:"FW",months:30,last:"2026-06"},
+      {name:"Node.js",cat:"言語",months:36,last:"2025-12"},
+      {name:"Figma",cat:"ツール",months:24,last:"2026-06"}
+    ],
+    quals:[{name:"応用情報技術者",date:"2019-12",note:""}],
+    careers:[
+      {start:"2024-01",end:"2026-06",current:false,project:"ECサイトフロントエンド刷新",
+       desc:"jQuery製の既存画面をReactへ段階移行。コンポーネント設計とデザインシステム整備を担当。",
+       role:"フロントエンドリード",team:6,env:"Vercel / GitHub Actions",
+       tech:"TypeScript, React, Next.js, Storybook",
+       phases:["基本設計","詳細設計","製造","テスト"],remarks:"表示速度を約40%改善"},
+      {start:"2021-04",end:"2023-12",current:false,project:"SaaS管理画面開発",
+       desc:"BtoB向けSaaSの管理画面をゼロから構築。",
+       role:"メンバー",team:4,env:"AWS Amplify",
+       tech:"TypeScript, React, GraphQL",
+       phases:["詳細設計","製造","テスト"],remarks:""}
+    ],
+    pr:"フロントエンド開発を専門に5年間従事してきました。\nReact / TypeScript を軸に、デザインシステムの整備やコンポーネント設計を得意としています。\n\nデザイナーとの協業経験が長く、Figmaを用いた仕様のすり合わせから実装まで一貫して対応可能です。"
+  },
+  {
+    id:3, code:"EMP-0044", name:"高橋 亮", kana:"タカハシ リョウ", gender:"男性",
+    birth:"1985-02-20", pref:"埼玉県", city:"さいたま市大宮区", station:"大宮",
+    education:"□□高等専門学校 卒業", empStatus:"稼働中",
+    price:"85万円", prefLoc:"首都圏", remote:"週2リモート希望",
+    intention:"現時点では予定なし", updated:"2026-06-15", status:"公開",
+    skills:[
+      {name:"Python",cat:"言語",months:120,last:"2026-06"},
+      {name:"Linux",cat:"OS",months:180,last:"2026-06"},
+      {name:"Kubernetes",cat:"インフラ",months:48,last:"2026-06"},
+      {name:"Terraform",cat:"ツール",months:42,last:"2026-06"},
+      {name:"MySQL",cat:"DB",months:96,last:"2025-08"}
+    ],
+    quals:[
+      {name:"ネットワークスペシャリスト",date:"2016-12",note:""},
+      {name:"CKA (Certified Kubernetes Administrator)",date:"2023-05",note:""}
+    ],
+    careers:[
+      {start:"2022-07",end:null,current:true,project:"大規模SaaS基盤のK8s移行",
+       desc:"オンプレ環境からKubernetesへの移行設計・構築。CI/CDパイプライン整備まで担当。",
+       role:"インフラアーキテクト",team:10,env:"GCP(GKE) / Terraform",
+       tech:"Kubernetes, Terraform, Python, ArgoCD",
+       phases:["要件定義","基本設計","設計構築","運用保守"],remarks:""},
+      {start:"2018-01",end:"2022-06",current:false,project:"通信キャリア向け監視基盤構築",
+       desc:"監視基盤の設計・構築および運用自動化スクリプトの開発。",
+       role:"インフラエンジニア",team:7,env:"オンプレLinux / Zabbix",
+       tech:"Python, Ansible, Zabbix, MySQL",
+       phases:["基本設計","設計構築","運用保守","サポート"],remarks:""}
+    ],
+    pr:"インフラ領域を中心に15年間の経験があります。\nオンプレからクラウドまで幅広く対応でき、直近はKubernetesを用いた基盤移行を主導しました。\n\n運用を見据えた設計と自動化を重視しており、構築後の運用負荷を下げる提案を得意としています。"
+  },
+  {
+    id:4, code:"EMP-0058", name:"伊藤 彩", kana:"イトウ アヤ", gender:"女性",
+    birth:"1998-07-09", pref:"東京都", city:"江東区", station:"豊洲",
+    education:"◇◇大学 経済学部 卒業", empStatus:"稼働中（2026-09 終了予定）",
+    price:"55万円", prefLoc:"東京23区", remote:"週1リモート希望",
+    intention:"良い案件があれば", updated:"2026-07-10", status:"下書き",
+    skills:[
+      {name:"C#",cat:"言語",months:48,last:"2026-07"},
+      {name:".NET",cat:"FW",months:48,last:"2026-07"},
+      {name:"SQL Server",cat:"DB",months:42,last:"2026-07"},
+      {name:"Azure",cat:"インフラ",months:18,last:"2026-05"}
+    ],
+    quals:[{name:"ITパスポート",date:"2020-06",note:""}],
+    careers:[
+      {start:"2022-04",end:null,current:true,project:"製造業向け生産管理システム改修",
+       desc:"生産計画機能の追加開発。ユーザー部門との要件調整も担当。",
+       role:"メンバー",team:6,env:"Azure / Windows Server",
+       tech:"C#, .NET, SQL Server",
+       phases:["詳細設計","製造","テスト"],remarks:""}
+    ],
+    pr:"C# / .NET による業務システム開発を4年間経験しています。\nユーザー部門とのコミュニケーションを丁寧に行い、要件の背景を確認したうえで実装することを心がけています。"
+  }
+];
+
+/* =========================================================
+   ユーティリティ
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const main = $("#main");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* 要件: 年齢はDBに保存せず生年月日から算出する */
+function calcAge(birth){
+  const b = new Date(birth), t = new Date("2026-08-03");
+  let a = t.getFullYear() - b.getFullYear();
+  const m = t.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
+  return a;
+}
+function months2y(m){
+  const y = Math.floor(m/12), r = m%12;
+  return r ? `${y}年${r}ヶ月` : `${y}年`;
+}
+/* 経験年数: 最も古い職歴の開始からの通算 */
+function totalYears(s){
+  if(!s.careers.length) return "—";
+  const oldest = s.careers.map(c=>c.start).sort()[0];
+  const [y,m] = oldest.split("-").map(Number);
+  const mm = (2026 - y) * 12 + (8 - m);
+  return months2y(mm);
+}
+function topSkills(s, n=3){ return s.skills.slice(0,n).map(k=>k.name); }
+function initial(name){ return name.replace(/\s/g,"").charAt(0); }
+function term(c){ return `${c.start.replace("-","/")} 〜 ${c.current ? "現在" : c.end.replace("-","/")}`; }
+function statusChip(st){
+  if(st.startsWith("待機")) return `<span class="chip ok">${esc(st)}</span>`;
+  if(st.startsWith("稼働中（")) return `<span class="chip warn">${esc(st)}</span>`;
+  return `<span class="chip">${esc(st)}</span>`;
+}
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function crumb(items){
+  return `<div class="crumb">` + items.map((it,i)=>
+    (i ? `<span>›</span>` : "") + (it.nav ? `<a href="#" data-nav="${it.nav}">${esc(it.label)}</a>` : esc(it.label))
+  ).join("") + `</div>`;
+}
+
+/* =========================================================
+   画面1: スキルシート一覧
+   ========================================================= */
+let listFilter = {q:"", status:"", skill:""};
+
+function screenList(){
+  const rows = SHEETS.filter(s=>{
+    if(listFilter.q && !(s.name+s.kana+s.code).includes(listFilter.q)) return false;
+    if(listFilter.status && !s.empStatus.startsWith(listFilter.status)) return false;
+    if(listFilter.skill && !s.skills.some(k=>k.name===listFilter.skill)) return false;
+    return true;
+  });
+  const allSkills = [...new Set(SHEETS.flatMap(s=>s.skills.map(k=>k.name)))].sort();
+
+  main.innerHTML = `
+  ${crumb([{label:"ホーム"},{label:"スキルシート一覧"}])}
+  <div class="pagehead">
+    <div>
+      <h1>スキルシート一覧</h1>
+      <p class="sub">登録 ${SHEETS.length} 件／表示 ${rows.length} 件</p>
+    </div>
+    <div class="acts">
+      <button class="btn" data-nav="import">⇪ Excelインポート</button>
+      <button class="btn primary" data-new="1">＋ 新規作成</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bd">
+      <div class="filters">
+        <div class="field"><label>氏名・社員番号</label>
+          <input class="ctl" id="fq" placeholder="例: 佐藤" value="${esc(listFilter.q)}"></div>
+        <div class="field"><label>就業状況</label>
+          <select class="ctl" id="fst">
+            <option value="">すべて</option>
+            <option value="稼働中"${listFilter.status==="稼働中"?" selected":""}>稼働中</option>
+            <option value="待機中"${listFilter.status==="待機中"?" selected":""}>待機中</option>
+          </select></div>
+        <div class="field"><label>保有スキル</label>
+          <select class="ctl" id="fsk">
+            <option value="">すべて</option>
+            ${allSkills.map(n=>`<option${listFilter.skill===n?" selected":""}>${esc(n)}</option>`).join("")}
+          </select></div>
+        <button class="btn" id="fclear">条件クリア</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bd flush">
+      <div class="tbl-scroll">
+      <table class="tbl">
+        <thead><tr>
+          <th>氏名</th><th>年齢</th><th>最寄駅</th><th>主なスキル</th>
+          <th>経験年数</th><th>就業状況</th><th>希望単価</th><th>最終更新日</th><th></th>
+        </tr></thead>
+        <tbody>
+        ${rows.length ? rows.map(s=>`
+          <tr data-open="${s.id}">
+            <td><div class="who">
+              <div class="av">${esc(initial(s.name))}</div>
+              <div><div class="nm">${esc(s.name)}${s.status==="下書き"?' <span class="chip">下書き</span>':""}</div>
+                   <div class="kn">${esc(s.kana)}／${esc(s.code)}</div></div>
+            </div></td>
+            <td class="num">${calcAge(s.birth)}歳</td>
+            <td>${esc(s.station)}</td>
+            <td><div class="taglist">${topSkills(s).map(n=>`<span class="tag">${esc(n)}</span>`).join("")}
+                ${s.skills.length>3?`<span class="tag gray">+${s.skills.length-3}</span>`:""}</div></td>
+            <td class="num">${totalYears(s)}</td>
+            <td>${statusChip(s.empStatus)}</td>
+            <td class="num">${esc(s.price)}</td>
+            <td class="num">${esc(s.updated)}</td>
+            <td><button class="btn sm" data-edit="${s.id}">編集</button></td>
+          </tr>`).join("")
+        : `<tr><td colspan="9"><div class="empty">条件に一致するスキルシートがありません。</div></td></tr>`}
+        </tbody>
+      </table>
+      </div>
+      <div class="pager">
+        <span>${rows.length} 件中 1–${rows.length} 件を表示</span>
+        <div class="spacer"></div>
+        <button class="btn sm" disabled>‹ 前へ</button>
+        <button class="btn sm" disabled>次へ ›</button>
+      </div>
+    </div>
+  </div>`;
+
+  $("#fq").oninput = e => { listFilter.q = e.target.value; screenList(); $("#fq").focus(); };
+  $("#fst").onchange = e => { listFilter.status = e.target.value; screenList(); };
+  $("#fsk").onchange = e => { listFilter.skill = e.target.value; screenList(); };
+  $("#fclear").onclick = () => { listFilter = {q:"",status:"",skill:""}; screenList(); };
+}
+
+/* =========================================================
+   画面2: スキルシート詳細
+   ========================================================= */
+function screenDetail(id){
+  const s = SHEETS.find(x=>x.id===id);
+  const cat = {};
+  s.skills.forEach(k => (cat[k.cat] ||= []).push(k));
+
+  main.innerHTML = `
+  ${crumb([{label:"ホーム"},{label:"スキルシート一覧",nav:"list"},{label:s.name}])}
+  <div class="pagehead">
+    <div>
+      <h1>${esc(s.name)} <span class="chip pri">${esc(s.code)}</span> ${s.status==="下書き"?'<span class="chip warn">下書き</span>':""}</h1>
+      <p class="sub">${esc(s.kana)}／最終更新 ${esc(s.updated)}</p>
+    </div>
+    <div class="acts">
+      <button class="btn" data-dup="${s.id}">⧉ 複製して新規作成</button>
+      <button class="btn" data-pdf="1">🖶 PDF表示</button>
+      <button class="btn primary" data-edit="${s.id}">✎ 編集</button>
+    </div>
+  </div>
+
+  <div class="note info"><p>要件のとおり、Excel帳票をそのまま再現せず、カード・タグ・表で読みやすく構成しています。年齢は生年月日から算出した値です。</p></div>
+
+  <div class="card">
+    <div class="hd"><h2>基本情報</h2></div>
+    <div class="bd">
+      <div class="dl">
+        <div class="row"><dt>氏名</dt><dd>${esc(s.name)}</dd></div>
+        <div class="row"><dt>フリガナ</dt><dd>${esc(s.kana)}</dd></div>
+        <div class="row"><dt>性別</dt><dd>${esc(s.gender)}</dd></div>
+        <div class="row"><dt>生年月日</dt><dd>${esc(s.birth)}</dd></div>
+        <div class="row"><dt>年齢</dt><dd>${calcAge(s.birth)}歳<span class="calc">生年月日から算出</span></dd></div>
+        <div class="row"><dt>居住地</dt><dd>${esc(s.pref)} ${esc(s.city)}</dd></div>
+        <div class="row"><dt>最寄駅</dt><dd>${esc(s.station)}</dd></div>
+        <div class="row"><dt>最終学歴</dt><dd>${esc(s.education)}</dd></div>
+        <div class="row"><dt>就業状況</dt><dd>${statusChip(s.empStatus)}</dd></div>
+        <div class="row"><dt>希望単価</dt><dd>${esc(s.price)}</dd></div>
+        <div class="row"><dt>希望勤務地</dt><dd>${esc(s.prefLoc)}</dd></div>
+        <div class="row"><dt>リモート希望</dt><dd>${esc(s.remote)}</dd></div>
+        <div class="row"><dt>転職意向</dt><dd>${esc(s.intention)}</dd></div>
+        <div class="row"><dt>最終更新日</dt><dd>${esc(s.updated)}</dd></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><h2>スキルサマリー</h2><span class="chip">${s.skills.length} 件</span></div>
+    <div class="bd">
+      ${Object.entries(cat).map(([c,ks])=>`
+        <div style="margin-bottom:.8rem">
+          <div style="font-size:11.5px;color:var(--fg-muted);font-weight:700;margin-bottom:.35rem">${esc(c)}</div>
+          <div class="taglist">${ks.map(k=>`<span class="tag">${esc(k.name)}<span class="yr">${months2y(k.months)}</span></span>`).join("")}</div>
+        </div>`).join("")}
+      <div class="tbl-scroll" style="margin-top:1rem">
+        <table class="tbl">
+          <thead><tr><th>スキル名</th><th>カテゴリ</th><th>経験期間</th><th>最終利用時期</th><th>備考</th></tr></thead>
+          <tbody>${s.skills.map(k=>`<tr style="cursor:default">
+            <td><strong>${esc(k.name)}</strong></td><td>${esc(k.cat)}</td>
+            <td class="num">${months2y(k.months)}</td><td class="num">${esc(k.last)}</td><td>—</td></tr>`).join("")}</tbody>
+        </table>
+      </div>
+      <p class="sub" style="font-size:11.5px;color:var(--fg-muted);margin:.6rem 0 0">
+        ※ MVPでは経験期間・最終利用時期の自動集計は必須としないため、手入力値を表示しています。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><h2>資格</h2><span class="chip">${s.quals.length} 件</span></div>
+    <div class="bd flush">
+      <table class="tbl">
+        <thead><tr><th style="width:9rem">取得年月</th><th>資格名</th><th>備考</th></tr></thead>
+        <tbody>${s.quals.map(q=>`<tr style="cursor:default">
+          <td class="num">${esc(q.date)}</td><td><strong>${esc(q.name)}</strong></td><td>${esc(q.note)||"—"}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><h2>職歴</h2><span class="chip">${s.careers.length} 件</span></div>
+    <div class="bd">
+      ${s.careers.map((c,i)=>`
+        <div class="career">
+          <div class="top">
+            <div class="no">${i+1}</div>
+            <div class="pjname">${esc(c.project)}</div>
+            ${c.current?'<span class="chip ok">現在参画中</span>':""}
+            <div class="term">${esc(term(c))}</div>
+          </div>
+          <div class="bd">
+            <div class="dl">
+              <div class="row"><dt>役割</dt><dd>${esc(c.role)}</dd></div>
+              <div class="row"><dt>チーム人数</dt><dd>${c.team}名</dd></div>
+              <div class="row"><dt>使用環境</dt><dd>${esc(c.env)}</dd></div>
+              <div class="row"><dt>使用技術</dt><dd>${esc(c.tech)}</dd></div>
+            </div>
+            <div style="margin-top:.7rem">
+              <div style="font-size:11.5px;color:var(--fg-muted);font-weight:700;margin-bottom:.25rem">業務内容</div>
+              <p style="margin:0 0 .7rem">${esc(c.desc)}</p>
+              <div style="font-size:11.5px;color:var(--fg-muted);font-weight:700;margin-bottom:.3rem">担当工程</div>
+              <div class="taglist">${PHASES.map(p=>
+                c.phases.includes(p) ? `<span class="tag">${esc(p)}</span>` : `<span class="tag gray" style="opacity:.4">${esc(p)}</span>`
+              ).join("")}</div>
+              ${c.remarks?`<div style="margin-top:.7rem"><div style="font-size:11.5px;color:var(--fg-muted);font-weight:700">備考</div><p style="margin:0">${esc(c.remarks)}</p></div>`:""}
+            </div>
+          </div>
+        </div>`).join("")}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><h2>自己PR</h2></div>
+    <div class="bd"><p class="pre">${esc(s.pr)}</p></div>
+  </div>`;
+}
+
+/* =========================================================
+   画面3: スキルシート編集
+   ========================================================= */
+let editState = null, editTab = "basic";
+
+function screenEdit(id, mode){
+  const src = id ? SHEETS.find(x=>x.id===id) : null;
+  editState = src ? JSON.parse(JSON.stringify(src)) : {
+    id:null, code:"", name:"", kana:"", gender:"", birth:"", pref:"", city:"", station:"",
+    education:"", empStatus:"待機中", price:"", prefLoc:"", remote:"", intention:"",
+    updated:"2026-08-03", status:"下書き", skills:[], quals:[], careers:[], pr:""
+  };
+  if(mode === "dup"){ editState.id = null; editState.code = ""; editState.name = src.name + "（複製）"; }
+  editState._mode = mode || (id ? "edit" : "new");
+  editTab = "basic";
+  renderEdit();
+}
+
+function renderEdit(){
+  const e = editState;
+  const title = e._mode==="new" ? "スキルシート新規作成"
+              : e._mode==="dup" ? "スキルシート複製" : "スキルシート編集";
+  main.innerHTML = `
+  ${crumb([{label:"ホーム"},{label:"スキルシート一覧",nav:"list"},{label:title}])}
+  <div class="pagehead">
+    <div><h1>${esc(title)}</h1><p class="sub">${e.name?esc(e.name):"新規レコード"}${e.code?"／"+esc(e.code):""}</p></div>
+    <div class="acts">
+      <button class="btn" data-nav="list">キャンセル</button>
+      <button class="btn" id="saveDraft">下書き保存</button>
+      <button class="btn primary" id="saveBtn">保存する</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button data-tab="basic" class="${editTab==="basic"?"active":""}">基本情報</button>
+    <button data-tab="skill" class="${editTab==="skill"?"active":""}">スキル・資格</button>
+    <button data-tab="career" class="${editTab==="career"?"active":""}">職歴 <span class="chip">${e.careers.length}</span></button>
+    <button data-tab="pr" class="${editTab==="pr"?"active":""}">自己PR</button>
+  </div>
+  <div id="tabBody"></div>`;
+
+  document.querySelectorAll(".tabs button").forEach(b=>{
+    b.onclick = () => { editTab = b.dataset.tab; renderEdit(); };
+  });
+  $("#saveBtn").onclick = () => toast("モックのため保存されません（保存処理は未実装）");
+  $("#saveDraft").onclick = () => toast("モックのため保存されません（下書き保存は未実装）");
+  renderTab();
+}
+
+function fld(label, val, opt){
+  opt = opt || {};
+  const w = opt.wide ? "grid-column:1/-1;" : "";
+  if(opt.type === "textarea")
+    return `<div class="field" style="${w}"><label>${esc(label)}</label><textarea class="ctl">${esc(val)}</textarea></div>`;
+  if(opt.type === "select")
+    return `<div class="field" style="${w}"><label>${esc(label)}</label><select class="ctl" style="width:100%">
+      ${opt.options.map(o=>`<option${o===val?" selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
+  return `<div class="field" style="${w}"><label>${esc(label)}</label>
+    <input class="ctl" style="width:100%" type="${opt.type||"text"}" value="${esc(val)}" placeholder="${esc(opt.ph||"")}"></div>`;
+}
+const GRID = `display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.9rem`;
+
+function renderTab(){
+  const e = editState, body = $("#tabBody");
+
+  if(editTab === "basic"){
+    body.innerHTML = `
+    <div class="card"><div class="hd"><h2>基本情報</h2></div><div class="bd">
+      <div style="${GRID}">
+        ${fld("社員番号", e.code, {ph:"EMP-0000"})}
+        ${fld("氏名", e.name)}
+        ${fld("フリガナ", e.kana)}
+        ${fld("性別", e.gender, {type:"select",options:["","男性","女性","回答しない"]})}
+        ${fld("生年月日", e.birth, {type:"date"})}
+        <div class="field"><label>年齢</label>
+          <input class="ctl" style="width:100%;background:var(--bg)" value="${e.birth?calcAge(e.birth)+"歳":"—"}" readonly>
+          <span style="font-size:11px;color:var(--ok)">生年月日から自動算出（DBには保存しません）</span></div>
+      </div>
+    </div></div>
+
+    <div class="card"><div class="hd"><h2>所在地・学歴</h2></div><div class="bd">
+      <div style="${GRID}">
+        ${fld("都道府県", e.pref)}
+        ${fld("市区町村", e.city)}
+        ${fld("最寄駅", e.station)}
+        ${fld("最終学歴", e.education, {wide:true})}
+      </div>
+    </div></div>
+
+    <div class="card"><div class="hd"><h2>就業・希望条件</h2></div><div class="bd">
+      <div style="${GRID}">
+        ${fld("就業状況", e.empStatus, {type:"select",options:["稼働中","待機中","稼働中（終了予定あり）"]})}
+        ${fld("希望単価", e.price, {ph:"例: 70万円"})}
+        ${fld("希望勤務地", e.prefLoc)}
+        ${fld("リモート希望", e.remote, {type:"select",options:["","出社のみ可","週1リモート希望","週2リモート希望","週3リモート希望","フルリモート希望"]})}
+        ${fld("転職意向", e.intention, {type:"select",options:["","積極的に検討","良い案件があれば","現時点では予定なし"]})}
+      </div>
+    </div></div>`;
+    return;
+  }
+
+  if(editTab === "skill"){
+    body.innerHTML = `
+    <div class="card">
+      <div class="hd"><h2>スキル</h2><div class="acts"><button class="btn sm primary" id="addSkill">＋ スキルを追加</button></div></div>
+      <div class="bd flush">
+        <div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th style="width:3rem">順</th><th>スキル名</th><th style="width:9rem">カテゴリ</th>
+            <th style="width:8rem">経験期間</th><th style="width:8rem">最終利用</th><th>備考</th><th style="width:5rem"></th></tr></thead>
+          <tbody>${e.skills.length ? e.skills.map((k,i)=>`
+            <tr style="cursor:default">
+              <td class="num">${i+1}</td>
+              <td><input class="ctl" style="width:100%;min-width:0" value="${esc(k.name)}"></td>
+              <td><select class="ctl" style="width:100%;min-width:0">
+                ${["言語","FW","DB","OS","インフラ","ツール"].map(c=>`<option${c===k.cat?" selected":""}>${c}</option>`).join("")}</select></td>
+              <td><input class="ctl" style="width:100%;min-width:0" value="${months2y(k.months)}"></td>
+              <td><input class="ctl" style="width:100%;min-width:0" value="${esc(k.last)}"></td>
+              <td><input class="ctl" style="width:100%;min-width:0" placeholder="—"></td>
+              <td><button class="btn sm danger" data-delskill="${i}">削除</button></td>
+            </tr>`).join("") : `<tr><td colspan="7"><div class="empty">スキルが登録されていません。</div></td></tr>`}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd"><h2>資格</h2><div class="acts"><button class="btn sm primary" id="addQual">＋ 資格を追加</button></div></div>
+      <div class="bd flush">
+        <div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th style="width:3rem">順</th><th style="width:10rem">取得年月</th><th>資格名</th><th>備考</th><th style="width:5rem"></th></tr></thead>
+          <tbody>${e.quals.length ? e.quals.map((q,i)=>`
+            <tr style="cursor:default">
+              <td class="num">${i+1}</td>
+              <td><input class="ctl" style="width:100%;min-width:0" value="${esc(q.date)}" placeholder="2024-04"></td>
+              <td><input class="ctl" style="width:100%;min-width:0" value="${esc(q.name)}"></td>
+              <td><input class="ctl" style="width:100%;min-width:0" value="${esc(q.note)}" placeholder="—"></td>
+              <td><button class="btn sm danger" data-delqual="${i}">削除</button></td>
+            </tr>`).join("") : `<tr><td colspan="5"><div class="empty">資格が登録されていません。</div></td></tr>`}
+          </tbody>
+        </table></div>
+      </div>
+    </div>`;
+
+    $("#addSkill").onclick = () => { e.skills.push({name:"",cat:"言語",months:0,last:""}); renderTab(); };
+    $("#addQual").onclick  = () => { e.quals.push({name:"",date:"",note:""}); renderTab(); };
+    body.querySelectorAll("[data-delskill]").forEach(b=>b.onclick=()=>{ e.skills.splice(+b.dataset.delskill,1); renderTab(); });
+    body.querySelectorAll("[data-delqual]").forEach(b=>b.onclick=()=>{ e.quals.splice(+b.dataset.delqual,1); renderTab(); });
+    return;
+  }
+
+  if(editTab === "career"){
+    body.innerHTML = `
+    <div class="note info"><p>職歴は<strong>追加・編集・削除・並び替え・複製</strong>ができます。新しいものから順に並べる想定です。</p></div>
+    <div class="pagehead" style="margin-bottom:.8rem">
+      <div><h1 style="font-size:15px">職歴 ${e.careers.length} 件</h1></div>
+      <div class="acts"><button class="btn primary" id="addCareer">＋ 職歴を追加</button></div>
+    </div>
+    ${e.careers.length ? e.careers.map((c,i)=>`
+      <div class="career">
+        <div class="top">
+          <div class="no">${i+1}</div>
+          <div class="pjname">${esc(c.project) || "（プロジェクト名未入力）"}</div>
+          ${c.current?'<span class="chip ok">現在参画中</span>':""}
+          <div class="acts">
+            <button class="btn sm" data-up="${i}" ${i===0?"disabled":""}>↑</button>
+            <button class="btn sm" data-down="${i}" ${i===e.careers.length-1?"disabled":""}>↓</button>
+            <button class="btn sm" data-dupc="${i}">⧉ 複製</button>
+            <button class="btn sm danger" data-delc="${i}">削除</button>
+          </div>
+        </div>
+        <div class="bd">
+          <div style="${GRID}">
+            ${fld("開始年月", c.start, {type:"month"})}
+            <div class="field"><label>終了年月</label>
+              <input class="ctl" style="width:100%" type="month" value="${esc(c.end||"")}" ${c.current?"disabled":""}>
+              <label style="display:flex;gap:.35rem;align-items:center;font-size:12px;color:var(--fg);margin-top:.3rem">
+                <input type="checkbox" data-cur="${i}" ${c.current?"checked":""}>現在参画中</label></div>
+            ${fld("役割", c.role)}
+            ${fld("チーム人数", c.team, {type:"number"})}
+            ${fld("プロジェクト名", c.project, {wide:true})}
+            ${fld("使用環境", c.env)}
+            ${fld("使用技術", c.tech)}
+            ${fld("業務内容", c.desc, {type:"textarea", wide:true})}
+          </div>
+          <div style="margin-top:.9rem">
+            <label style="font-size:11.5px;color:var(--fg-muted);font-weight:700;display:block;margin-bottom:.4rem">担当工程</label>
+            <div class="taglist">${PHASES.map(p=>`
+              <label class="tag ${c.phases.includes(p)?"":"gray"}" style="cursor:pointer;display:inline-flex;gap:.3rem;align-items:center">
+                <input type="checkbox" data-ph="${i}" value="${esc(p)}" ${c.phases.includes(p)?"checked":""} style="margin:0">${esc(p)}</label>`).join("")}</div>
+          </div>
+          <div style="margin-top:.9rem">${fld("備考", c.remarks||"", {wide:true})}</div>
+        </div>
+      </div>`).join("")
+    : `<div class="card"><div class="bd"><div class="empty">職歴が登録されていません。「＋ 職歴を追加」から登録してください。</div></div></div>`}`;
+
+    $("#addCareer").onclick = () => {
+      e.careers.unshift({start:"",end:"",current:false,project:"",desc:"",role:"",team:1,env:"",tech:"",phases:[],remarks:""});
+      renderTab(); toast("職歴を1件追加しました");
+    };
+    body.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>{const i=+b.dataset.up;[e.careers[i-1],e.careers[i]]=[e.careers[i],e.careers[i-1]];renderTab();});
+    body.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>{const i=+b.dataset.down;[e.careers[i+1],e.careers[i]]=[e.careers[i],e.careers[i+1]];renderTab();});
+    body.querySelectorAll("[data-dupc]").forEach(b=>b.onclick=()=>{const i=+b.dataset.dupc;
+      e.careers.splice(i+1,0,JSON.parse(JSON.stringify(e.careers[i])));renderTab();toast("職歴を複製しました");});
+    body.querySelectorAll("[data-delc]").forEach(b=>b.onclick=()=>{e.careers.splice(+b.dataset.delc,1);renderTab();toast("職歴を削除しました");});
+    body.querySelectorAll("[data-cur]").forEach(cb=>cb.onchange=()=>{const i=+cb.dataset.cur;e.careers[i].current=cb.checked;renderTab();});
+    body.querySelectorAll("[data-ph]").forEach(cb=>cb.onchange=()=>{
+      const i=+cb.dataset.ph, v=cb.value, ph=e.careers[i].phases;
+      cb.checked ? (!ph.includes(v)&&ph.push(v)) : ph.splice(ph.indexOf(v),1);
+      renderTab();
+    });
+    return;
+  }
+
+  if(editTab === "pr"){
+    body.innerHTML = `
+    <div class="card"><div class="hd"><h2>自己PR</h2></div><div class="bd">
+      <div class="note info"><p>MVPではリッチテキストエディタを利用せず、改行可能なテキスト形式とします。</p></div>
+      <textarea class="ctl" style="min-height:280px">${esc(e.pr)}</textarea>
+      <p style="font-size:11.5px;color:var(--fg-muted);margin:.4rem 0 0">${e.pr.length} 文字</p>
+    </div></div>`;
+  }
+}
+
+/* =========================================================
+   画面4: Excelインポート
+   ========================================================= */
+let importStep = 1;
+const IMPORT_PARSED = {
+  name:"山本 直樹", kana:"ヤマモト ナオキ", gender:"男性", birth:"1992-09-15",
+  pref:"千葉県", city:"船橋市", station:"船橋", education:"◎◎大学 理工学部 卒業",
+  empStatus:"待機中", price:"65万円", prefLoc:"東京・千葉", remote:"週2リモート希望",
+  intention:"積極的に検討",
+  skills:[{name:"PHP",cat:"言語",months:84,last:"2026-05"},{name:"Laravel",cat:"FW",months:60,last:"2026-05"},
+          {name:"MySQL",cat:"DB",months:84,last:"2026-05"},{name:"Vue.js",cat:"FW",months:30,last:"2025-11"}],
+  quals:[{name:"基本情報技術者",date:"2015-10",note:""}],
+  careers:[
+    {start:"2021-06",end:"2026-05",current:false,project:"会員制ポータルサイト開発",
+     desc:"会員機能・決済連携の設計から実装まで担当。",role:"サブリーダー",team:5,
+     env:"AWS(EC2/RDS)",tech:"PHP, Laravel, MySQL, Vue.js",phases:["基本設計","詳細設計","製造","テスト"],remarks:""},
+    {start:"2017-04",end:"2021-05",current:false,project:"社内業務システム保守",
+     desc:"既存システムの改修と障害対応。",role:"メンバー",team:3,
+     env:"オンプレLinux",tech:"PHP, MySQL",phases:["製造","テスト","運用保守"],remarks:""}
+  ]
+};
+const IMPORT_WARN = [
+  {cell:"C7", item:"生年月日", val:"1992/9/15", msg:"日付書式を自動変換しました（1992-09-15）"},
+  {cell:"E12", item:"希望単価", val:"65〜70万", msg:"数値に変換できないため、そのまま文字列として取り込みます"},
+  {cell:"B31", item:"担当工程", val:"詳細設計〜テスト", msg:"範囲指定のため、詳細設計・製造・テストとして解釈しました"}
+];
+
+function screenImport(){
+  main.innerHTML = `
+  ${crumb([{label:"ホーム"},{label:"スキルシート一覧",nav:"list"},{label:"Excelインポート"}])}
+  <div class="pagehead">
+    <div><h1>Excelインポート</h1>
+      <p class="sub">既存スキルシートをDBへ初期取り込みします</p></div>
+  </div>
+
+  <div class="note warn"><p>対象は<strong>自社スキルシート形式1種類のみ</strong>です。他フォーマットはMVP対象外。取り込み後はブラウザ上で編集し、<strong>DBを正本</strong>として運用します（Excelへの再出力は行いません）。</p></div>
+
+  <div class="card"><div class="bd">
+    <div class="stepper">
+      ${[[1,"アップロード"],[2,"解析結果の確認・修正"],[3,"DBへ登録"]].map(([n,l],i)=>`
+        ${i?'<div class="stepline"></div>':""}
+        <div class="step ${importStep===n?"active":importStep>n?"done":""}">
+          <div class="dot">${importStep>n?"✓":n}</div>${l}</div>`).join("")}
+    </div>
+    <div id="impBody"></div>
+  </div></div>`;
+  renderImport();
+}
+
+function renderImport(){
+  const b = $("#impBody");
+
+  if(importStep === 1){
+    b.innerHTML = `
+      <div class="drop">
+        <div class="big">⇪</div>
+        <p><strong>スキルシートのExcelファイルをドロップ</strong><br>または下のボタンから選択してください（.xlsx）</p>
+        <button class="btn primary" id="pick" style="margin-top:.6rem">ファイルを選択</button>
+      </div>
+      <p style="font-size:12px;color:var(--fg-muted);margin-top:.8rem">
+        ※ モックのため、ボタンを押すとサンプルExcel「山本直樹_スキルシート.xlsx」を読み込んだ想定で進みます。</p>`;
+    $("#pick").onclick = () => { importStep = 2; screenImport(); toast("山本直樹_スキルシート.xlsx を解析しました"); };
+    return;
+  }
+
+  if(importStep === 2){
+    const p = IMPORT_PARSED;
+    b.innerHTML = `
+      <div class="note info"><p>解析結果を確認し、必要に応じて修正してください。<strong>この画面で修正した内容がDBへ登録されます。</strong></p></div>
+
+      <div class="card" style="box-shadow:none">
+        <div class="hd"><h2>読み込んだファイル</h2></div>
+        <div class="bd" style="display:flex;gap:.8rem;align-items:center;flex-wrap:wrap">
+          <span class="chip pri">山本直樹_スキルシート.xlsx</span>
+          <span style="font-size:12.5px;color:var(--fg-muted)">シート「スキルシート」／48行を解析</span>
+          <span class="chip ok">基本情報 13項目</span><span class="chip ok">スキル ${p.skills.length}件</span>
+          <span class="chip ok">資格 ${p.quals.length}件</span><span class="chip ok">職歴 ${p.careers.length}件</span>
+          <span class="chip warn">要確認 ${IMPORT_WARN.length}件</span>
+        </div>
+      </div>
+
+      <div class="card" style="box-shadow:none">
+        <div class="hd"><h2>要確認項目</h2><span class="chip warn">${IMPORT_WARN.length} 件</span></div>
+        <div class="bd flush"><div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th style="width:5rem">セル</th><th style="width:9rem">項目</th><th style="width:11rem">Excelの値</th><th>解析結果</th></tr></thead>
+          <tbody>${IMPORT_WARN.map(w=>`<tr style="cursor:default">
+            <td><span class="chip">${esc(w.cell)}</span></td><td>${esc(w.item)}</td>
+            <td><code style="font-size:12px">${esc(w.val)}</code></td><td>${esc(w.msg)}</td></tr>`).join("")}</tbody>
+        </table></div></div>
+      </div>
+
+      <div class="card" style="box-shadow:none">
+        <div class="hd"><h2>基本情報</h2></div>
+        <div class="bd"><div style="${GRID}">
+          ${fld("氏名",p.name)}${fld("フリガナ",p.kana)}${fld("性別",p.gender)}
+          ${fld("生年月日",p.birth,{type:"date"})}
+          <div class="field"><label>年齢</label>
+            <input class="ctl" style="width:100%;background:var(--bg)" value="${calcAge(p.birth)}歳" readonly>
+            <span style="font-size:11px;color:var(--ok)">生年月日から自動算出</span></div>
+          ${fld("都道府県",p.pref)}${fld("市区町村",p.city)}${fld("最寄駅",p.station)}
+          ${fld("最終学歴",p.education,{wide:true})}
+          ${fld("就業状況",p.empStatus)}${fld("希望単価",p.price)}
+          ${fld("希望勤務地",p.prefLoc)}${fld("リモート希望",p.remote)}${fld("転職意向",p.intention)}
+        </div></div>
+      </div>
+
+      <div class="card" style="box-shadow:none">
+        <div class="hd"><h2>スキル・資格</h2></div>
+        <div class="bd flush"><div class="tbl-scroll"><table class="tbl">
+          <thead><tr><th>スキル名</th><th>カテゴリ</th><th>経験期間</th><th>最終利用</th></tr></thead>
+          <tbody>${p.skills.map(k=>`<tr style="cursor:default"><td><strong>${esc(k.name)}</strong></td>
+            <td>${esc(k.cat)}</td><td class="num">${months2y(k.months)}</td><td class="num">${esc(k.last)}</td></tr>`).join("")}
+            ${p.quals.map(q=>`<tr style="cursor:default"><td colspan="2"><span class="chip">資格</span> <strong>${esc(q.name)}</strong></td>
+            <td colspan="2" class="num">${esc(q.date)} 取得</td></tr>`).join("")}</tbody>
+        </table></div></div>
+      </div>
+
+      <div class="card" style="box-shadow:none">
+        <div class="hd"><h2>職歴</h2><span class="chip">${p.careers.length} 件</span></div>
+        <div class="bd">${p.careers.map((c,i)=>`
+          <div class="career"><div class="top">
+            <div class="no">${i+1}</div><div class="pjname">${esc(c.project)}</div>
+            <div class="term">${esc(term(c))}</div></div>
+            <div class="bd"><div class="dl">
+              <div class="row"><dt>役割</dt><dd>${esc(c.role)}</dd></div>
+              <div class="row"><dt>チーム人数</dt><dd>${c.team}名</dd></div>
+              <div class="row"><dt>使用環境</dt><dd>${esc(c.env)}</dd></div>
+              <div class="row"><dt>使用技術</dt><dd>${esc(c.tech)}</dd></div>
+            </div>
+            <div style="margin-top:.6rem"><div style="font-size:11.5px;color:var(--fg-muted);font-weight:700;margin-bottom:.25rem">担当工程</div>
+              <div class="taglist">${c.phases.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div></div>
+          </div></div>`).join("")}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.6rem;justify-content:flex-end">
+        <button class="btn" id="impBack">‹ 戻る</button>
+        <button class="btn primary" id="impGo">この内容でDBへ登録 ›</button>
+      </div>`;
+    $("#impBack").onclick = () => { importStep = 1; screenImport(); };
+    $("#impGo").onclick   = () => { importStep = 3; screenImport(); };
+    return;
+  }
+
+  b.innerHTML = `
+    <div style="text-align:center;padding:2rem 1rem">
+      <div style="font-size:40px;color:var(--ok);line-height:1">✓</div>
+      <h2 style="margin:.5rem 0 .3rem;font-size:17px">取り込みが完了しました</h2>
+      <p style="color:var(--fg-muted);margin:0 0 1.2rem">
+        「山本 直樹」のスキルシートをDBへ登録しました。以降はブラウザ上で編集してください。</p>
+      <div style="display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap">
+        <button class="btn" id="impAgain">続けて別のファイルを取り込む</button>
+        <button class="btn primary" data-nav="list">スキルシート一覧へ戻る</button>
+      </div>
+      <p style="font-size:12px;color:var(--fg-muted);margin-top:1.4rem">
+        ※ モックのため実際には登録されません。一覧には反映されません。</p>
+    </div>`;
+  $("#impAgain").onclick = () => { importStep = 1; screenImport(); };
+}
+
+/* =========================================================
+   ルーティング
+   ========================================================= */
+function go(nav){
+  document.querySelectorAll(".side a.item").forEach(a=>a.classList.toggle("active", a.dataset.nav===nav));
+  window.scrollTo(0,0);
+  if(nav === "import"){ importStep = 1; screenImport(); }
+  else screenList();
+}
+
+document.addEventListener("click", ev => {
+  const t = ev.target.closest("[data-nav],[data-open],[data-edit],[data-new],[data-dup],[data-pdf]");
+  if(!t) return;
+  if(t.dataset.nav){ ev.preventDefault(); go(t.dataset.nav); return; }
+  ev.preventDefault();
+  window.scrollTo(0,0);
+  if(t.dataset.pdf){ toast("印刷ダイアログを開きます（PDF保存で出力）"); setTimeout(()=>window.print(),400); return; }
+  if(t.dataset.new){ screenEdit(null); return; }
+  if(t.dataset.dup){ screenEdit(+t.dataset.dup, "dup"); return; }
+  if(t.dataset.edit){ screenEdit(+t.dataset.edit); return; }
+  if(t.dataset.open){ screenDetail(+t.dataset.open); return; }
+});
+
+go("list");
+</script>
 </body>
 </html>
