@@ -92,15 +92,23 @@ Lavenderのルーティングは `src/index.tsx` の `<Switch>` に集約され�
 
 ### パス案
 
-| 画面 | パス案 |
+| 画面 | パス |
 |------|--------|
 | スキルシート一覧 | `/skill-sheet` |
-| スキルシート詳細・編集 | `/skill-sheet/:id` |
-| スキルシート新規作成 | `/skill-sheet/new`（または `:id` に新規用の値を渡す） |
 | Excelインポート | `/skill-sheet/import` |
+| スキルシート新規作成 | `/skill-sheet/new` |
+| スキルシート詳細 | `/skill-sheet/:id` |
+| スキルシート編集 | `/skill-sheet/:id/edit` |
 | 案件一覧 | `/project` |
-| 案件詳細・編集 | `/project/:id` |
 | メール取り込み | `/project/mail-import` |
+| 案件詳細・編集 | `/project/:id` |
+
+> **詳細と編集を分ける理由**: 要件上、詳細画面には「編集」「PDF表示」「複製して新規作成」の
+> 操作があり、編集画面とは役割が異なるため。非管理者ユーザーの初期表示先も詳細画面である。
+>
+> **ルートの記述順に注意**: `<Switch>` は先勝ちのため、`/skill-sheet/import` と
+> `/skill-sheet/new`、`/project/mail-import` は `:id` より**前**に定義する。
+> 後ろに置くと `:id` に吸われて詳細画面に遷移してしまう。
 
 > **決定（2026-08-04）**: パスは**ケバブケースに統一する**。
 > 既存Lavenderはケバブケース（`/contact-prospect`、`/app-version`、`/sns-setting`）と
