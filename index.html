@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -453,7 +453,7 @@ function months2y(m){
   const y = Math.floor(m/12), r = m%12;
   return r ? `${y}年${r}ヶ月` : `${y}年`;
 }
-/* 経験年数: 最も古い職歴の開始からの通算 */
+/* 経験年数: 最も古い経歴の開始からの通算 */
 function totalYears(s){
   if(!s.careers.length) return "—";
   const oldest = s.careers.map(c=>c.start).sort()[0];
@@ -650,7 +650,7 @@ function screenDetail(id){
   </div>
 
   <div class="card">
-    <div class="hd"><h2>職歴</h2><span class="chip">${s.careers.length} 件</span></div>
+    <div class="hd"><h2>経歴</h2><span class="chip">${s.careers.length} 件</span></div>
     <div class="bd">
       ${s.careers.map((c,i)=>`
         <div class="career">
@@ -723,7 +723,7 @@ function renderEdit(){
   <div class="tabs">
     <button data-tab="basic" class="${editTab==="basic"?"active":""}">基本情報</button>
     <button data-tab="skill" class="${editTab==="skill"?"active":""}">スキル・資格</button>
-    <button data-tab="career" class="${editTab==="career"?"active":""}">職歴 <span class="chip">${e.careers.length}</span></button>
+    <button data-tab="career" class="${editTab==="career"?"active":""}">経歴 <span class="chip">${e.careers.length}</span></button>
     <button data-tab="pr" class="${editTab==="pr"?"active":""}">自己PR</button>
   </div>
   <div id="tabBody"></div>`;
@@ -838,10 +838,10 @@ function renderTab(){
 
   if(editTab === "career"){
     body.innerHTML = `
-    <div class="note info"><p>職歴は<strong>追加・編集・削除・並び替え・複製</strong>ができます。新しいものから順に並べる想定です。</p></div>
+    <div class="note info"><p>経歴は<strong>追加・編集・削除・並び替え・複製</strong>ができます。新しいものから順に並べる想定です。</p></div>
     <div class="pagehead" style="margin-bottom:.8rem">
-      <div><h1 style="font-size:15px">職歴 ${e.careers.length} 件</h1></div>
-      <div class="acts"><button class="btn primary" id="addCareer">＋ 職歴を追加</button></div>
+      <div><h1 style="font-size:15px">経歴 ${e.careers.length} 件</h1></div>
+      <div class="acts"><button class="btn primary" id="addCareer">＋ 経歴を追加</button></div>
     </div>
     ${e.careers.length ? e.careers.map((c,i)=>`
       <div class="career">
@@ -879,17 +879,17 @@ function renderTab(){
           <div style="margin-top:.9rem">${fld("備考", c.remarks||"", {wide:true})}</div>
         </div>
       </div>`).join("")
-    : `<div class="card"><div class="bd"><div class="empty">職歴が登録されていません。「＋ 職歴を追加」から登録してください。</div></div></div>`}`;
+    : `<div class="card"><div class="bd"><div class="empty">経歴が登録されていません。「＋ 経歴を追加」から登録してください。</div></div></div>`}`;
 
     $("#addCareer").onclick = () => {
       e.careers.unshift({start:"",end:"",current:false,project:"",desc:"",role:"",team:1,env:"",tech:"",phases:[],remarks:""});
-      renderTab(); toast("職歴を1件追加しました");
+      renderTab(); toast("経歴を1件追加しました");
     };
     body.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>{const i=+b.dataset.up;[e.careers[i-1],e.careers[i]]=[e.careers[i],e.careers[i-1]];renderTab();});
     body.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>{const i=+b.dataset.down;[e.careers[i+1],e.careers[i]]=[e.careers[i],e.careers[i+1]];renderTab();});
     body.querySelectorAll("[data-dupc]").forEach(b=>b.onclick=()=>{const i=+b.dataset.dupc;
-      e.careers.splice(i+1,0,JSON.parse(JSON.stringify(e.careers[i])));renderTab();toast("職歴を複製しました");});
-    body.querySelectorAll("[data-delc]").forEach(b=>b.onclick=()=>{e.careers.splice(+b.dataset.delc,1);renderTab();toast("職歴を削除しました");});
+      e.careers.splice(i+1,0,JSON.parse(JSON.stringify(e.careers[i])));renderTab();toast("経歴を複製しました");});
+    body.querySelectorAll("[data-delc]").forEach(b=>b.onclick=()=>{e.careers.splice(+b.dataset.delc,1);renderTab();toast("経歴を削除しました");});
     body.querySelectorAll("[data-cur]").forEach(cb=>cb.onchange=()=>{const i=+cb.dataset.cur;e.careers[i].current=cb.checked;renderTab();});
     body.querySelectorAll("[data-ph]").forEach(cb=>cb.onchange=()=>{
       const i=+cb.dataset.ph, v=cb.value, ph=e.careers[i].phases;
@@ -984,7 +984,7 @@ function renderImport(){
           <span class="chip pri">山本直樹_スキルシート.xlsx</span>
           <span style="font-size:12.5px;color:var(--fg-muted)">シート「スキルシート」／48行を解析</span>
           <span class="chip ok">基本情報 13項目</span><span class="chip ok">スキル ${p.skills.length}件</span>
-          <span class="chip ok">資格 ${p.quals.length}件</span><span class="chip ok">職歴 ${p.careers.length}件</span>
+          <span class="chip ok">資格 ${p.quals.length}件</span><span class="chip ok">経歴 ${p.careers.length}件</span>
           <span class="chip warn">要確認 ${IMPORT_WARN.length}件</span>
         </div>
       </div>
@@ -1026,7 +1026,7 @@ function renderImport(){
       </div>
 
       <div class="card" style="box-shadow:none">
-        <div class="hd"><h2>職歴</h2><span class="chip">${p.careers.length} 件</span></div>
+        <div class="hd"><h2>経歴</h2><span class="chip">${p.careers.length} 件</span></div>
         <div class="bd">${p.careers.map((c,i)=>`
           <div class="career"><div class="top">
             <div class="no">${i+1}</div><div class="pjname">${esc(c.project)}</div>
