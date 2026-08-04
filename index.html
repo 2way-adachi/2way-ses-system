@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>スキルシート管理システム 画面モック | 2way-ses-system</title>
+<title>2way Manage system SES画面モック | 2way-ses-system</title>
 <style>
 :root{
   --primary:#1e5eb8; --primary-dark:#17488d; --primary-soft:#e8f0fb;
@@ -215,6 +215,59 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
   body{background:#fff}
   .card{box-shadow:none;break-inside:avoid}
 }
+
+
+/* ---------- Lavender integration overrides ---------- */
+:root{
+  --primary:#3f51b5; --primary-dark:#303f9f; --primary-soft:#eef0fb;
+  --bg:#fafafa; --surface:#fff; --fg:#222; --fg-muted:#666;
+  --border:#e0e0e0; --border-strong:#bdbdbd;
+  --radius:4px; --header-h:64px; --sidebar-w:240px;
+}
+body{background:var(--bg);font-family:'BIZ UDPGothic','Yu Gothic',YuGothic,'Hiragino Kaku Gothic Pro',Meiryo,Osaka,'MS PGothic',sans-serif;}
+.mockbar{display:none;}
+header.appbar{
+  position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:1201;
+  background:var(--primary);padding:0 24px;box-shadow:0 2px 4px rgba(0,0,0,.2);
+}
+.appbar .logo{font-size:20px;font-weight:500;letter-spacing:0;}
+.appbar .logo span{display:none;}
+.appbar .user{font-size:14px;}
+.avatar{background:rgba(255,255,255,.2);}
+.shell{display:block;min-height:100vh;}
+nav.side{
+  position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);z-index:1100;
+  padding:var(--header-h) 0 24px;background:#e0e0e8;border-right:0;overflow-y:auto;
+}
+main{margin-left:var(--sidebar-w);padding:88px 24px 48px;min-width:0;}
+.side .grp{
+  padding:10px 16px 4px;font-size:12px;font-weight:400;letter-spacing:0;color:rgba(0,0,0,.54);text-transform:none;
+}
+.side a.item{
+  min-height:48px;padding:10px 16px 10px 24px;border-left:0;color:rgba(0,0,0,.87);
+  font-size:14px;gap:0;background:transparent;
+}
+.side a.item:hover{background:rgba(0,0,0,.04);}
+.side a.item.active{background:rgba(63,81,181,.12);border-left:0;color:rgba(0,0,0,.87);font-weight:500;}
+.side a.item.disabled{color:rgba(0,0,0,.45);pointer-events:none;}
+.side .ico{display:none;}
+.side .badge{display:none;}
+.side .divider{height:1px;background:rgba(0,0,0,.12);margin:8px 0;}
+.side .subitem{padding-left:34px;}
+.card{border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24);border:0;}
+.card>.hd{background:#fff;border-bottom:1px solid var(--border);}
+.btn{border-radius:4px;text-transform:none;}
+.crumb{display:none;}
+.pagehead h1{font-size:22px;font-weight:500;}
+.integration-note{margin-bottom:16px;color:rgba(0,0,0,.6);font-size:12px;}
+@media (max-width:860px){
+  header.appbar{height:56px;}
+  nav.side{position:static;width:auto;padding:56px 0 0;display:flex;background:#e0e0e8;overflow-x:auto;height:auto;}
+  main{margin-left:0;padding:16px;}
+  .side .grp,.side .divider,.side .item.disabled.fukuro-only{display:none;}
+  .side a.item{min-height:44px;white-space:nowrap;padding:8px 14px;}
+}
+
 </style>
 </head>
 <body>
@@ -225,21 +278,33 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
 </div>
 
 <header class="appbar">
-  <div class="logo">SES管理システム<span>スキルシート管理</span></div>
+  <div class="logo">2way Manage system</div>
   <div class="spacer"></div>
   <div class="user"><span>営業部 田中</span><div class="avatar">田</div></div>
 </header>
 
 <div class="shell">
   <nav class="side">
-    <div class="grp">スキルシート</div>
-    <a class="item active" href="#" data-nav="list"><span class="ico">▤</span>スキルシート一覧<span class="badge" id="navCount">4</span></a>
-    <a class="item" href="#" data-nav="import"><span class="ico">⇪</span>Excelインポート</a>
-    <div class="grp">案件（MVP・別担当）</div>
-    <a class="item disabled" href="#"><span class="ico">▦</span>案件一覧<span class="badge">未実装</span></a>
-    <a class="item disabled" href="#"><span class="ico">✉</span>メール取り込み<span class="badge">未実装</span></a>
-    <div class="grp">その他</div>
-    <a class="item disabled" href="#"><span class="ico">⇄</span>仮マッチング<span class="badge">余力時</span></a>
+    <div class="grp">FUKURO2.0</div>
+    <a class="item disabled fukuro-only" href="#">ユーザー情報</a>
+    <a class="item disabled fukuro-only" href="#">アプリホーム</a>
+    <a class="item disabled fukuro-only" href="#">景品情報</a>
+    <a class="item disabled fukuro-only" href="#">店舗情報</a>
+    <a class="item disabled fukuro-only" href="#">会社情報</a>
+    <a class="item disabled fukuro-only" href="#">ガチャ開催期間情報</a>
+    <a class="item disabled fukuro-only" href="#">発送依頼情報</a>
+    <a class="item disabled fukuro-only" href="#">広告情報</a>
+    <a class="item disabled fukuro-only" href="#">袋デザイン情報</a>
+    <a class="item disabled fukuro-only" href="#">新規問い合わせ</a>
+    <a class="item disabled fukuro-only" href="#">利用者問い合わせ</a>
+    <a class="item disabled fukuro-only" href="#">アプリバージョン情報</a>
+    <a class="item disabled fukuro-only" href="#">SNS設定情報</a>
+    <div class="divider"></div>
+    <div class="grp">SES</div>
+    <a class="item active" href="#" data-nav="list">スキルシート</a>
+    <a class="item disabled" href="#">案件一覧</a>
+    <div class="divider"></div>
+    <a class="item disabled" href="#">ログアウト</a>
   </nav>
 
   <main id="main"></main>
@@ -258,8 +323,7 @@ const SHEETS = [
     id:1, code:"EMP-0012", name:"佐藤 健一", kana:"サトウ ケンイチ", gender:"男性",
     birth:"1990-04-12", pref:"東京都", city:"世田谷区", station:"三軒茶屋",
     education:"○○大学 工学部 情報工学科 卒業", empStatus:"稼働中",
-    price:"70万円", prefLoc:"東京23区", remote:"週3リモート希望",
-    intention:"良い案件があれば", updated:"2026-07-28", status:"公開",
+    price:"70万円", prefLoc:"東京23区", remote:"週3リモート希望",updated:"2026-07-28", status:"公開",
     skills:[
       {name:"Java",cat:"言語",months:96,last:"2026-07"},
       {name:"Spring Boot",cat:"FW",months:72,last:"2026-07"},
@@ -294,8 +358,7 @@ const SHEETS = [
     id:2, code:"EMP-0031", name:"鈴木 美咲", kana:"スズキ ミサキ", gender:"女性",
     birth:"1995-11-03", pref:"神奈川県", city:"横浜市港北区", station:"新横浜",
     education:"△△大学 情報学部 卒業", empStatus:"待機中",
-    price:"60万円", prefLoc:"神奈川・東京", remote:"フルリモート希望",
-    intention:"積極的に検討", updated:"2026-08-01", status:"公開",
+    price:"60万円", prefLoc:"神奈川・東京", remote:"フルリモート希望", updated:"2026-08-01", status:"公開",
     skills:[
       {name:"TypeScript",cat:"言語",months:54,last:"2026-06"},
       {name:"React",cat:"FW",months:54,last:"2026-06"},
@@ -322,8 +385,7 @@ const SHEETS = [
     id:3, code:"EMP-0044", name:"高橋 亮", kana:"タカハシ リョウ", gender:"男性",
     birth:"1985-02-20", pref:"埼玉県", city:"さいたま市大宮区", station:"大宮",
     education:"□□高等専門学校 卒業", empStatus:"稼働中",
-    price:"85万円", prefLoc:"首都圏", remote:"週2リモート希望",
-    intention:"現時点では予定なし", updated:"2026-06-15", status:"公開",
+    price:"85万円", prefLoc:"首都圏", remote:"週2リモート希望",updated:"2026-06-15", status:"公開",
     skills:[
       {name:"Python",cat:"言語",months:120,last:"2026-06"},
       {name:"Linux",cat:"OS",months:180,last:"2026-06"},
@@ -353,8 +415,7 @@ const SHEETS = [
     id:4, code:"EMP-0058", name:"伊藤 彩", kana:"イトウ アヤ", gender:"女性",
     birth:"1998-07-09", pref:"東京都", city:"江東区", station:"豊洲",
     education:"◇◇大学 経済学部 卒業", empStatus:"稼働中（2026-09 終了予定）",
-    price:"55万円", prefLoc:"東京23区", remote:"週1リモート希望",
-    intention:"良い案件があれば", updated:"2026-07-10", status:"下書き",
+    price:"55万円", prefLoc:"東京23区", remote:"週1リモート希望",updated:"2026-07-10", status:"下書き",
     skills:[
       {name:"C#",cat:"言語",months:48,last:"2026-07"},
       {name:".NET",cat:"FW",months:48,last:"2026-07"},
@@ -479,7 +540,7 @@ function screenList(){
           <tr data-open="${s.id}">
             <td><div class="who">
               <div class="av">${esc(initial(s.name))}</div>
-              <div><div class="nm">${esc(s.name)}${s.status==="下書き"?' <span class="chip">下書き</span>':""}</div>
+              <div><div class="nm">${esc(s.name)}</div>
                    <div class="kn">${esc(s.kana)}／${esc(s.code)}</div></div>
             </div></td>
             <td class="num">${calcAge(s.birth)}歳</td>
@@ -551,7 +612,6 @@ function screenDetail(id){
         <div class="row"><dt>希望単価</dt><dd>${esc(s.price)}</dd></div>
         <div class="row"><dt>希望勤務地</dt><dd>${esc(s.prefLoc)}</dd></div>
         <div class="row"><dt>リモート希望</dt><dd>${esc(s.remote)}</dd></div>
-        <div class="row"><dt>転職意向</dt><dd>${esc(s.intention)}</dd></div>
         <div class="row"><dt>最終更新日</dt><dd>${esc(s.updated)}</dd></div>
       </div>
     </div>
@@ -636,7 +696,7 @@ function screenEdit(id, mode){
   const src = id ? SHEETS.find(x=>x.id===id) : null;
   editState = src ? JSON.parse(JSON.stringify(src)) : {
     id:null, code:"", name:"", kana:"", gender:"", birth:"", pref:"", city:"", station:"",
-    education:"", empStatus:"待機中", price:"", prefLoc:"", remote:"", intention:"",
+    education:"", empStatus:"待機中", price:"", prefLoc:"", remote:"",
     updated:"2026-08-03", status:"下書き", skills:[], quals:[], careers:[], pr:""
   };
   if(mode === "dup"){ editState.id = null; editState.code = ""; editState.name = src.name + "（複製）"; }
@@ -722,7 +782,6 @@ function renderTab(){
         ${fld("希望単価", e.price, {ph:"例: 70万円"})}
         ${fld("希望勤務地", e.prefLoc)}
         ${fld("リモート希望", e.remote, {type:"select",options:["","出社のみ可","週1リモート希望","週2リモート希望","週3リモート希望","フルリモート希望"]})}
-        ${fld("転職意向", e.intention, {type:"select",options:["","積極的に検討","良い案件があれば","現時点では予定なし"]})}
       </div>
     </div></div>`;
     return;
@@ -807,8 +866,8 @@ function renderTab(){
             ${fld("役割", c.role)}
             ${fld("チーム人数", c.team, {type:"number"})}
             ${fld("プロジェクト名", c.project, {wide:true})}
-            ${fld("使用環境", c.env)}
-            ${fld("使用技術", c.tech)}
+            ${fld("使用環境", c.env, {wide:true})}
+            ${fld("使用技術", c.tech, {wide:true})}
             ${fld("業務内容", c.desc, {type:"textarea", wide:true})}
           </div>
           <div style="margin-top:.9rem">
@@ -858,7 +917,6 @@ const IMPORT_PARSED = {
   name:"山本 直樹", kana:"ヤマモト ナオキ", gender:"男性", birth:"1992-09-15",
   pref:"千葉県", city:"船橋市", station:"船橋", education:"◎◎大学 理工学部 卒業",
   empStatus:"待機中", price:"65万円", prefLoc:"東京・千葉", remote:"週2リモート希望",
-  intention:"積極的に検討",
   skills:[{name:"PHP",cat:"言語",months:84,last:"2026-05"},{name:"Laravel",cat:"FW",months:60,last:"2026-05"},
           {name:"MySQL",cat:"DB",months:84,last:"2026-05"},{name:"Vue.js",cat:"FW",months:30,last:"2025-11"}],
   quals:[{name:"基本情報技術者",date:"2015-10",note:""}],
@@ -882,7 +940,7 @@ function screenImport(){
   ${crumb([{label:"ホーム"},{label:"スキルシート一覧",nav:"list"},{label:"Excelインポート"}])}
   <div class="pagehead">
     <div><h1>Excelインポート</h1>
-      <p class="sub">既存スキルシートをDBへ初期取り込みします</p></div>
+      <p class="sub">Lavender の SES 機能として既存スキルシートをDBへ初期取り込みします</p></div>
   </div>
 
   <div class="note warn"><p>対象は<strong>自社スキルシート形式1種類のみ</strong>です。他フォーマットはMVP対象外。取り込み後はブラウザ上で編集し、<strong>DBを正本</strong>として運用します（Excelへの再出力は行いません）。</p></div>
@@ -952,7 +1010,7 @@ function renderImport(){
           ${fld("都道府県",p.pref)}${fld("市区町村",p.city)}${fld("最寄駅",p.station)}
           ${fld("最終学歴",p.education,{wide:true})}
           ${fld("就業状況",p.empStatus)}${fld("希望単価",p.price)}
-          ${fld("希望勤務地",p.prefLoc)}${fld("リモート希望",p.remote)}${fld("転職意向",p.intention)}
+          ${fld("希望勤務地",p.prefLoc)}${fld("リモート希望",p.remote)}
         </div></div>
       </div>
 
