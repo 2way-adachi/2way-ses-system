@@ -83,7 +83,8 @@ MVPの中心は次の2軸とする。
 │  │  ├─ screen-design.md
 │  │  └─ data-model.md
 │  └─ development/
-│     └─ team-responsibilities.md
+│     ├─ team-responsibilities.md
+│     └─ mock-sync-status.md
 ├─ frontend/        # ※Lavender組み込み方針への変更により、用途を再検討中
 ├─ backend/         # ※API配置が未確定のため、用途を再検討中
 └─ infrastructure/  # インフラ関連（未着手）
@@ -102,6 +103,16 @@ MVPの中心は次の2軸とする。
 | [画面設計](docs/design/screen-design.md) | 画面一覧と各画面の表示項目、操作 |
 | [データモデル](docs/design/data-model.md) | MVP時点の論理データモデル案 |
 | [開発体制と役割分担](docs/development/team-responsibilities.md) | 3人体制の担当分割と開発工程 |
+| [モック追従状況](docs/development/mock-sync-status.md) | 要件変更に対する画面モックの反映状況（現在2件未追従） |
+
+## 画面モック
+
+要件をもとにした画面モックを公開している（ダミーデータで動作、保存はされない）。
+
+- モック: https://2way-adachi.github.io/2way-ses-system/
+- 要件ページ: https://2way-adachi.github.io/2way-ses-system/requirements.html
+
+> モックは一部の要件変更に未追従。状況は [モック追従状況](docs/development/mock-sync-status.md) を参照。
 
 ---
 
