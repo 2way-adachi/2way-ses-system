@@ -1,0 +1,197 @@
+# Lavender組み込み要件
+
+本システムは独立サービスとして構築せず、既存の管理画面 **Lavender（2way Manage system）の1機能**として追加する。
+
+- 作成日: 2026-08-04
+- ステータス: ドラフト（初版）
+- 前提変更: 当初は独立Webシステムを想定していたが、Lavenderへの機能追加に方針変更
+
+---
+
+## 1. 方針
+
+| 項目 | 内容 |
+|------|------|
+| 追加先 | Lavender（管理画面 React／`2way_repository/Lavender`） |
+| 位置づけ | Lavender内の**新しい大項目**として追加する |
+| 理由 | 対象システムがFUKURO2.0ではなくSESであるため、既存の大項目とは分離する |
+| 認証 | Lavender既存のログイン機構をそのまま利用する |
+| 共通レイアウト | Lavender既存のAppBar・Drawer・Containerをそのまま利用する |
+
+独立したフロントエンド基盤・ログイン・共通レイアウトは**新規に作らない**。
+
+---
+
+## 2. サイドバー構成
+
+### 現状（Lavender）
+
+サイドバーは `src/index.tsx` の「ログイン中のメニュー」に定義されている。
+大項目の見出しは `Typography variant="overline"` で表現し、その下に `MenuList` / `MenuItem` を並べる構造。
+
+```text
+FUKURO2.0                ← 大項目（overline見出し）
+  ユーザー情報
+  アプリホーム
+  景品情報
+  店舗情報
+  会社情報
+  ガチャ開催期間情報
+  発送依頼情報
+  広告情報
+  袋デザイン情報
+  新規問い合わせ
+  利用者問い合わせ
+  アプリバージョン情報
+  SNS設定情報
+─────────────────────    ← Divider
+  ログアウト
+```
+
+### 変更後
+
+**FUKURO2.0とは別の大項目「SES」を新設**し、その配下にメニューを追加する。
+
+```text
+FUKURO2.0                ← 既存（変更しない）
+  ユーザー情報
+  ： （中略）
+  SNS設定情報
+
+SES                      ← 新設する大項目
+  スキルシート
+  案件一覧
+─────────────────────    ← Divider（既存）
+  ログアウト
+```
+
+### 要件
+
+- 大項目「SES」は、FUKURO2.0の`MenuList`の**後**、`Divider`＋ログアウトの**前**に配置する
+- 大項目の見出しは既存と同じ表現（`Typography variant="overline"`）を用い、見た目を揃える
+- 既存のFUKURO2.0配下のメニュー項目は**変更・削除しない**
+- 大項目名は「SES」とする（表記ゆれを避けるため、画面上の文言はこの1箇所に統一）
+
+---
+
+## 3. 追加するメニューと画面
+
+| メニュー | 画面 | 備考 |
+|---------|------|------|
+| スキルシート | 一覧／詳細／新規作成／編集／Excelインポート | [スキルシート要件](skill-sheet-requirements.md) |
+| 案件一覧 | 一覧／詳細／編集／メール取り込み | [MVP要件定義](mvp-requirements.md) |
+
+仮マッチングは余力がある場合のみ追加する。追加する場合もSES大項目の配下に置く。
+
+---
+
+## 4. ルーティング
+
+Lavenderのルーティングは `src/index.tsx` の `<Switch>` に集約されている。
+一覧を `/xxx`、詳細・編集を `/xxx/:id` とする既存パターンに合わせる。
+
+### パス案
+
+| 画面 | パス案 |
+|------|--------|
+| スキルシート一覧 | `/skill-sheet` |
+| スキルシート詳細・編集 | `/skill-sheet/:id` |
+| スキルシート新規作成 | `/skill-sheet/new`（または `:id` に新規用の値を渡す） |
+| Excelインポート | `/skill-sheet/import` |
+| 案件一覧 | `/project` |
+| 案件詳細・編集 | `/project/:id` |
+| メール取り込み | `/project/mail-import` |
+
+> **未確定**: 既存のパス表記はケバブケース（`/contact-prospect`、`/app-version`、`/sns-setting`）と
+> キャメルケース（`/bagDesign`、`/gachaPeriod`）が混在している。新規追加分は、比較的新しい
+> ケバブケースに揃えることを推奨するが、工程1で決定する。
+
+---
+
+## 5. ディレクトリ構成
+
+Lavenderは `src/views/{機能名}/` 配下に `{機能名}List.tsx` / `{機能名}Edit.tsx` を置く構成。
+この規約に合わせる。
+
+```text
+src/views/
+  skillSheet/
+    skillSheetList.tsx
+    skillSheetEdit.tsx
+    skillSheetImport.tsx
+  project/
+    projectList.tsx
+    projectEdit.tsx
+    projectMailImport.tsx
+```
+
+API呼び出しは既存同様 `src/api/components/` にフックとして追加する。
+
+---
+
+## 6. 技術スタック（確定分）
+
+Lavenderへの組み込みにより、フロントエンドの技術スタックは既存に従うことで確定した。
+
+| 項目 | 内容 |
+|------|------|
+| React | 17.0.2 |
+| TypeScript | 4.1.6 |
+| UIライブラリ | Material-UI 4.12.2 |
+| ルーティング | react-router-dom 5.2.0 |
+| 状態管理 | Redux Toolkit 1.6.1 / react-redux 7.2.4 |
+| HTTPクライアント | axios 0.21.1 |
+
+新しいUIライブラリ・状態管理ライブラリは**導入しない**。
+
+> 画面モックはMaterial Design系の管理画面として作成しているが、実装時はMaterial-UI v4の
+> コンポーネントに置き換える。モックのHTML/CSSをそのまま移植しない。
+
+---
+
+## 7. 影響範囲
+
+### 変更するファイル
+
+| ファイル | 変更内容 |
+|---------|---------|
+| `src/index.tsx` | SES大項目とメニュー項目の追加、ルート定義の追加、import追加 |
+
+### 追加するファイル
+
+- `src/views/skillSheet/` 配下の画面
+- `src/views/project/` 配下の画面
+- `src/api/components/` 配下のAPI呼び出しフック
+
+### 変更しないもの
+
+- FUKURO2.0配下の既存メニュー・画面・ルート
+- `src/frame.tsx`（レイアウト。SES追加のために変更する必要はない想定）
+- 既存の認証・トークン管理（`loginSlice` / IndexedDB）
+
+---
+
+## 8. 未確定事項
+
+方針変更により新たに発生した検討事項。工程1（仕様固定）で決定する。
+
+| # | 論点 | 補足 |
+|---|------|------|
+| 1 | **バックエンドAPIの配置** | 既存のthyme（Spring Boot）に相乗りするか、SES用に別APIを立てるか |
+| 2 | **DBの配置** | fukuroデータベースにテーブル追加するか、SES用に別DB／別スキーマを分けるか |
+| 3 | **メニューの表示制御** | SES大項目を全管理ユーザーに表示するか、権限で出し分けるか |
+| 4 | **リポジトリの役割** | 実装は`2way_repository`に行うため、`2way-ses-system`をドキュメント専用にするか |
+| 5 | パス命名規約 | ケバブケースに統一するか（4章参照） |
+| 6 | Excelアップロード・PDF出力の実装方式 | Lavenderに同種の機能が既にあるかの確認を含む |
+
+> **注意**: 1と2はデータモデル・担当分担に直結する。工程1で最優先に決めること。
+
+---
+
+## 関連ドキュメント
+
+- [MVP要件定義](mvp-requirements.md)
+- [スキルシート要件](skill-sheet-requirements.md)
+- [画面設計](../design/screen-design.md)
+- [データモデル](../design/data-model.md)
+- [開発体制と役割分担](../development/team-responsibilities.md)

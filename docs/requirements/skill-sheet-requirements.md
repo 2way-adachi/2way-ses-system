@@ -174,5 +174,6 @@ Excelは初期インポート用の**入力アダプター**とし、ブラウ�
 ## 関連ドキュメント
 
 - [MVP要件定義](mvp-requirements.md)
+- [Lavender組み込み要件](lavender-integration.md)
 - [画面設計](../design/screen-design.md)
 - [データモデル](../design/data-model.md)

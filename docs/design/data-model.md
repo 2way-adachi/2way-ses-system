@@ -3,7 +3,13 @@
 MVP向けの論理データモデルを整理する。
 
 - 作成日: 2026-08-03
+- 更新日: 2026-08-04（Lavender組み込み方針を反映）
 - **ステータス: 本データモデルは確定仕様ではなく、MVP開始時点の案である。** 工程1（仕様固定）で見直す前提とする。
+
+> **未確定（最優先）**: Lavenderの1機能として追加する方針に変更したため、これらのテーブルを
+> 既存のfukuroデータベースに追加するか、SES用に別DB／別スキーマを分けるかが未決定である。
+> 同居させる場合はテーブル名の衝突回避（`ses_` プレフィックス等）も併せて決める必要がある。
+> 詳細は [Lavender組み込み要件](../requirements/lavender-integration.md) を参照。
 
 ---
 
@@ -192,17 +198,21 @@ mail_import_histories （取り込み実行履歴）
 
 ## 5. 未確定事項
 
+- **DBの配置**（fukuroデータベースに同居させるか、別DB／別スキーマに分けるか）
+- **同居させる場合のテーブル名規約**（`ses_` プレフィックスの要否）
 - 物理データモデル（型、桁、NULL制約、インデックス）
 - 論理削除の要否と方式
 - `status` の取りうる値
 - `attendance_submission_source` のNULL許容条件と未参画時の扱い
 - 単価の単位と表現（月額 / 時間単価、税区分）
-- DB製品の選定
+
+DB製品は、fukuroデータベースに同居させる場合はMySQLで確定する。別DBとする場合は工程1で選定する。
 
 ---
 
 ## 関連ドキュメント
 
 - [MVP要件定義](../requirements/mvp-requirements.md)
+- [Lavender組み込み要件](../requirements/lavender-integration.md)
 - [スキルシート要件](../requirements/skill-sheet-requirements.md)
 - [画面設計](screen-design.md)

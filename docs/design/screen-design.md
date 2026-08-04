@@ -3,21 +3,36 @@
 MVPで想定する画面構成を整理する。
 
 - 作成日: 2026-08-03
-- ステータス: ドラフト（初版）。確定仕様ではない。
+- 更新日: 2026-08-04（Lavender組み込み方針を反映）
+- ステータス: ドラフト。確定仕様ではない。
 
 ---
 
 ## 1. 共通レイアウト
 
-- 左側サイドメニュー
-- 上部ヘッダー
-- パンくず
-- メインコンテンツ
+**Lavender（2way Manage system）の既存レイアウトをそのまま利用する。新規に作成しない。**
+
+- 上部ヘッダー（AppBar「2way Manage system」）
+- 左側サイドメニュー（Drawer 幅240px、PCは常時表示・SPはハンバーガー）
+- メインコンテンツ（Container）
+
+### サイドメニュー
+
+FUKURO2.0とは別に、大項目「**SES**」を新設して以下を配置する。
+
+```text
+SES
+  スキルシート
+  案件一覧
+```
+
+配置位置・実装方法は [Lavender組み込み要件](../requirements/lavender-integration.md) を参照。
 
 ### 前提
 
 - PCブラウザを主対象とする
-- Material Design系のシンプルな管理画面を想定する
+- **Material-UI v4** のコンポーネントを利用する（Lavender既存に準拠）
+- パンくずはLavenderに既存の仕組みがないため、必要性を含めて工程1で判断する
 
 ---
 
@@ -159,15 +174,18 @@ MVPではリアルタイム監視を行わず、この画面のボタンによ�
 
 ## 10. 未確定事項
 
-- UIフレームワーク、コンポーネントライブラリの選定
 - 一覧画面の検索、絞り込み条件
-- ページングの方式と件数
-- ログイン画面の要否とユーザー管理方式
+- ページングの方式と件数（Lavender既存画面の方式に揃えるかを含む）
+- パンくずの要否
+- SESメニューの表示制御（権限による出し分けの要否）
+
+UIフレームワーク（Material-UI v4）とログイン方式はLavender既存に準拠するため確定済み。
 
 ---
 
 ## 関連ドキュメント
 
 - [MVP要件定義](../requirements/mvp-requirements.md)
+- [Lavender組み込み要件](../requirements/lavender-integration.md)
 - [スキルシート要件](../requirements/skill-sheet-requirements.md)
 - [データモデル](data-model.md)
