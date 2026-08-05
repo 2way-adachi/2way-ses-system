@@ -256,7 +256,7 @@ const PHASES = ["要件定義","基本設計","詳細設計","設計構築","製
 
 const SHEETS = [
   {
-    id:1, code:"EMP-0012", name:"佐藤 健一", kana:"サトウ ケンイチ", gender:"男性",
+    id:1, code:"0012", name:"佐藤 健一", kana:"サトウ ケンイチ", gender:"男性",
     birth:"1990-04-12", pref:"東京都", city:"世田谷区", station:"三軒茶屋",
     education:"○○大学 工学部 情報工学科 卒業", empStatus:"稼働中",
     price:"70万円", prefLoc:"東京23区", remote:"週3リモート希望",
@@ -292,7 +292,7 @@ const SHEETS = [
     pr:"金融・物流領域を中心に9年間、Javaによる業務システム開発に従事してきました。\n直近3年はチームリーダーとして8名規模のチームを牽引し、要件定義からリリースまで一貫して担当しています。\n\n特に性能改善・設計品質の観点でのレビューを得意としており、既存システムの課題を整理して改善提案を行うことに強みがあります。\nAWS環境でのコンテナ運用経験もあり、インフラ面まで含めた提案が可能です。"
   },
   {
-    id:2, code:"EMP-0031", name:"鈴木 美咲", kana:"スズキ ミサキ", gender:"女性",
+    id:2, code:"0031", name:"鈴木 美咲", kana:"スズキ ミサキ", gender:"女性",
     birth:"1995-11-03", pref:"神奈川県", city:"横浜市港北区", station:"新横浜",
     education:"△△大学 情報学部 卒業", empStatus:"待機中",
     price:"60万円", prefLoc:"神奈川・東京", remote:"フルリモート希望",
@@ -320,7 +320,7 @@ const SHEETS = [
     pr:"フロントエンド開発を専門に5年間従事してきました。\nReact / TypeScript を軸に、デザインシステムの整備やコンポーネント設計を得意としています。\n\nデザイナーとの協業経験が長く、Figmaを用いた仕様のすり合わせから実装まで一貫して対応可能です。"
   },
   {
-    id:3, code:"EMP-0044", name:"高橋 亮", kana:"タカハシ リョウ", gender:"男性",
+    id:3, code:"0044", name:"高橋 亮", kana:"タカハシ リョウ", gender:"男性",
     birth:"1985-02-20", pref:"埼玉県", city:"さいたま市大宮区", station:"大宮",
     education:"□□高等専門学校 卒業", empStatus:"稼働中",
     price:"85万円", prefLoc:"首都圏", remote:"週2リモート希望",
@@ -351,7 +351,7 @@ const SHEETS = [
     pr:"インフラ領域を中心に15年間の経験があります。\nオンプレからクラウドまで幅広く対応でき、直近はKubernetesを用いた基盤移行を主導しました。\n\n運用を見据えた設計と自動化を重視しており、構築後の運用負荷を下げる提案を得意としています。"
   },
   {
-    id:4, code:"EMP-0058", name:"伊藤 彩", kana:"イトウ アヤ", gender:"女性",
+    id:4, code:"0058", name:"伊藤 彩", kana:"イトウ アヤ", gender:"女性",
     birth:"1998-07-09", pref:"東京都", city:"江東区", station:"豊洲",
     education:"◇◇大学 経済学部 卒業", empStatus:"稼働中（2026-09 終了予定）",
     price:"55万円", prefLoc:"東京23区", remote:"週1リモート希望",
@@ -522,7 +522,7 @@ function setPath(obj, path, value){
 }
 function fieldValue(el){
   if(el.dataset.dateFormat) return normalizeDateValue(el.value);
-  if(el.dataset.employeeCode) return toHalfWidth(el.value).replace(/[^A-Za-z0-9-]/g, "").toUpperCase();
+  if(el.dataset.employeeCode) return toHalfWidth(el.value).replace(/[^0-9]/g, "").slice(0, 4);
   if(el.type === "number") return Number(el.value || 0);
   return el.value;
 }
@@ -898,7 +898,7 @@ function renderTab(){
     body.innerHTML = `
     <div class="card"><div class="hd"><h2>基本情報</h2></div><div class="bd">
       <div style="${GRID}">
-        ${fld("社員番号", e.code, {ph:"EMP-0000", employeeCode:true, bind:"code"})}
+        ${fld("社員番号", e.code, {ph:"0012", employeeCode:true, bind:"code"})}
         ${fld("氏名", e.name, {ph:"例: 山田 太郎", bind:"name"})}
         ${fld("フリガナ", e.kana, {ph:"例: ヤマダ タロウ", bind:"kana"})}
         ${fld("性別", e.gender, {type:"select",options:["","男性","女性","回答しない"], bind:"gender"})}
