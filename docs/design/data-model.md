@@ -32,9 +32,7 @@ MVP向けの論理データモデルを整理する。
 | `skill_sheets` | スキルシート本体（基本情報、自己PR） |
 | `skill_sheet_careers` | 職歴 |
 | `career_phases` | 職歴ごとの担当工程 |
-| `skills` | スキルマスタ |
-| `skill_sheet_skills` | スキルシートとスキルの関連 |
-| `career_skills` | 職歴とスキルの関連 |
+| `skill_sheet_skills` | スキル（スキル名を直接保持） |
 | `qualifications` | 資格 |
 | `skill_sheet_drafts` | スキルシート編集中の下書き |
 | `projects` | 案件 |
@@ -58,17 +56,20 @@ MVP向けの論理データモデルを整理する。
 - city
 - nearest_station
 - education
-- desired_unit_price
+- desired_unit_price_min
+- desired_unit_price_max
 - preferred_location
 - remote_preference
 - self_pr
 - status
-- created_at
-- updated_at
+- create_datetime
+- update_datetime
 
 補足：
 
 - 年齢は保持せず、`birth_date` から算出する
+- 社員番号は4桁（実データは2桁。拡張を見越して4桁で確保）
+- 希望単価は数値（円/月）の上下限で保持し、案件の単価と比較できるようにする
 - 住所は `prefecture` / `city` / `nearest_station` に分割して保持する
 - **就業状況は保持しない。** 職歴の `is_current` と `end_date` から算出する（下表）
 - **勤怠提出元は保持しない。** 職歴ごとの項目として `skill_sheet_careers` に持つ
@@ -99,11 +100,10 @@ MVP向けの論理データモデルを整理する。
 - attendance_submission_source
 - environment
 - remarks
-- created_at
-- updated_at
 
 補足：
 
+- 作成日時・更新日時は親（`skill_sheets`）のみが持つ
 - `attendance_submission_source` は**職歴ごと**の勤怠提出元。候補値は `upper_company` / `current_member`
 - 過去職歴にも値を保持する
 - 一覧表示・検索では、`is_current = true` の職歴、無ければ最新の職歴の値のみを対象とする
@@ -121,41 +121,29 @@ MVP向けの論理データモデルを整理する。
 
 > MVPで実装を簡略化する場合は、担当工程を `skill_sheet_careers` にBoolean列として保持する案も許容する。
 
-### 2.4 skills
-
-候補項目：
-
-- id
-- name
-- category
-- created_at
-- updated_at
-
-### 2.5 skill_sheet_skills
+### 2.4 skill_sheet_skills
 
 候補項目：
 
 - id
 - skill_sheet_id
-- skill_id
+- display_order
+- name
+- category
 - experience_months
 - last_used_date
 - remarks
-- display_order
 
 補足：
 
+- **スキルマスタは持たない**（2026-08-05 決定）。スキル名を直接保持する
+  - 画面がスキル名を自由入力とするため、マスタを設けても形骸化する
+  - 仮マッチングも文字列比較を前提とする
+  - 表記ゆれは許容する。将来マスタ化する余地は残す
 - `experience_months` / `last_used_date` の自動集計はMVPでは必須としない
+- 職歴ごとの使用技術は `skill_sheet_careers.technology` に文字列で保持する
 
-### 2.6 career_skills
-
-候補項目：
-
-- id
-- career_id
-- skill_id
-
-### 2.7 qualifications
+### 2.5 qualifications
 
 候補項目：
 
@@ -166,7 +154,7 @@ MVP向けの論理データモデルを整理する。
 - remarks
 - display_order
 
-### 2.8 skill_sheet_drafts
+### 2.6 skill_sheet_drafts
 
 スキルシート編集中の下書きを保持する。**下書きはDBに保存する**（2026-08-04 決定）。
 
@@ -248,9 +236,7 @@ MVP向けの論理データモデルを整理する。
 
 ```text
 skill_sheets 1 --- * skill_sheet_careers 1 --- * career_phases
-             |                          |
-             |                          +--- * career_skills * --- 1 skills
-             +--- * skill_sheet_skills * --- 1 skills
+             +--- * skill_sheet_skills   （スキル名を直接保持。マスタなし）
              +--- * qualifications
              +--- * skill_sheet_drafts   （ユーザー×シート単位。正式保存/キャンセルで削除）
 
@@ -260,19 +246,32 @@ mail_import_histories （取り込み実行履歴）
 
 就業状況・勤怠提出元は `skill_sheets` に持たず、`skill_sheet_careers` から導出する。
 
-仮マッチングは `projects.required_skills_text` と `skill_sheet_skills` / `skills` を単純比較して算出する。
+仮マッチングは `projects.required_skills_text` と `skill_sheet_skills.name` を単純比較して算出する。
 
 ---
 
 ## 5. 未確定事項
 
-- 物理データモデル（型、桁、NULL制約、インデックス）
-- 論理削除の要否と方式
-- `status` の取りうる値
-- `attendance_submission_source` の必須条件とNULL許容の扱い
-- 単価の単位と表現（月額 / 時間単価、税区分）
+- `attendance_submission_source` の必須入力条件
+- Excelインポート時、範囲表記の希望単価（例「65〜70万」）をどう数値化するか
 
-DB製品は、thymeが接続する既存環境に合わせてMySQLとする。
+### 決定済み（2026-08-05）
+
+物理データモデルを確定した。DDLは thyme の `docs/ddl/schema-ses.sql` を参照。
+
+| 論点 | 決定 |
+|------|------|
+| 年月項目（`yyyy-mm`） | `date` 型。日は01固定 |
+| 作成日時・更新日時 | 親テーブルのみ保持（`skill_sheets` 等）。子テーブルは持たない |
+| 担当工程 | `career_phases` テーブルで正規化（Boolean列案は不採用） |
+| スキルマスタ | **持たない**。スキル名を直接保持 |
+| 下書きの `content` | `json` 型（MySQL 5.7.44 で利用可） |
+| 単価 | 数値（円/月）の上下限。`desired_unit_price_min` / `max` |
+| 論理削除 | **行わない**（物理削除）。`skill_sheets.status` は 0:下書き / 1:公開 |
+| 社員番号 | 4桁（実データ2桁。拡張分を確保） |
+| 外部キー制約 | 張らない（既存fukuroに準拠）。整合性はアプリ側で担保 |
+
+DB製品はMySQL 5.7.44（thymeが接続する既存環境に合わせる）。
 
 ---
 
