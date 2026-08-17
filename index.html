@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>スキルシート管理システム 画面モック | 2way-ses-system</title>
+<title>SES管理システム 画面モック | 2way-ses-system</title>
 <style>
 :root{
   --primary:#1e5eb8; --primary-dark:#17488d; --primary-soft:#e8f0fb;
@@ -201,6 +201,29 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
 .hidden{display:none !important}
+.ses-list{display:flex;flex-direction:column}
+.ses-row{
+  display:grid;grid-template-columns:minmax(260px,1.6fr) minmax(180px,1fr) 120px minmax(120px,.65fr) minmax(110px,.6fr);
+  gap:16px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;
+}
+.ses-row.proposal{grid-template-columns:minmax(260px,1.6fr) minmax(180px,1fr) 120px 96px 140px minmax(120px,.7fr)}
+.ses-row:hover{background:var(--primary-soft)}
+.ses-head{font-size:12px;color:var(--fg-muted);font-weight:700;background:#fafbfc;cursor:default}
+.ses-head:hover{background:#fafbfc}
+.ses-title{font-weight:700;line-height:1.45}
+.ses-sub{font-size:12px;color:var(--fg-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ses-tech{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ses-score{font-weight:700;color:var(--primary-dark)}
+.member-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin:0 0 16px;overflow-x:auto}
+.member-tabs button{border:0;background:transparent;padding:12px 18px;color:var(--fg-muted);font:inherit;white-space:nowrap}
+.member-tabs button.active{color:var(--primary);border-bottom:2px solid var(--primary);font-weight:700}
+.member-tabs button:hover{background:var(--bg)}
+.timeline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.timeline .step{margin:0}
+@media (max-width:980px){
+  .ses-row,.ses-row.proposal{grid-template-columns:1fr 1fr}
+  .ses-head{display:none}
+}
 @media (max-width:860px){
   .shell{grid-template-columns:1fr}
   nav.side{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding:.4rem}
@@ -226,21 +249,20 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
 </div>
 
 <header class="appbar">
-  <div class="logo">SES管理システム<span>スキルシート管理</span></div>
+  <div class="logo">SES管理システム<span>画面モック</span></div>
   <div class="spacer"></div>
   <div class="user"><span>営業部 田中</span><div class="avatar">田</div></div>
 </header>
 
 <div class="shell">
   <nav class="side">
-    <div class="grp">スキルシート</div>
-    <a class="item active" href="#" data-nav="list"><span class="ico">▤</span>スキルシート一覧<span class="badge" id="navCount">4</span></a>
+    <div class="grp">SES</div>
+    <a class="item disabled" href="#"><span class="ico">✉</span>案件メール一覧</a>
+    <a class="item disabled" href="#"><span class="ico">✉</span>要員メール一覧</a>
+    <a class="item active" href="#" data-nav="members"><span class="ico">▤</span>メンバー一覧<span class="badge" id="navCount">4</span></a>
+    <a class="item" href="#" data-nav="matching"><span class="ico">⇄</span>マッチング一覧</a>
+    <a class="item" href="#" data-nav="proposal"><span class="ico">✓</span>提案管理一覧</a>
     <a class="item" href="#" data-nav="import"><span class="ico">⇪</span>Excelインポート</a>
-    <div class="grp">案件（MVP・別担当）</div>
-    <a class="item disabled" href="#"><span class="ico">▦</span>案件一覧<span class="badge">未実装</span></a>
-    <a class="item disabled" href="#"><span class="ico">✉</span>メール取り込み<span class="badge">未実装</span></a>
-    <div class="grp">その他</div>
-    <a class="item disabled" href="#"><span class="ico">⇄</span>仮マッチング<span class="badge">余力時</span></a>
   </nav>
 
   <main id="main"></main>
@@ -374,6 +396,31 @@ const SHEETS = [
   }
 ];
 
+const PROJECTS = [
+  {id:101,name:"金融系基幹システム刷新 詳細設計〜製造",start:"即日、9月〜",required:["Java","Spring Boot","Oracle"],client:"大手SIer"},
+  {id:102,name:"ECサイトリプレイス フロントエンド開発",start:"即日",required:["React","TypeScript","Next.js"],client:"Webサービス企業"},
+  {id:103,name:"物流管理システム新規開発 PM候補",start:"9月〜",required:["PM","Java","AWS"],client:"物流系事業会社"},
+  {id:104,name:"医療系Webアプリ バックエンド開発",start:"即日、8月〜",required:["Python","Django","PostgreSQL"],client:"医療系スタートアップ"},
+  {id:105,name:"製造業向けIoT基盤構築 インフラ設計",start:"9月〜",required:["AWS","Terraform","Docker","Kubernetes"],client:"製造業エンド"},
+  {id:106,name:"モバイルアプリ開発 iOS/Android",start:"10月〜",required:["Swift","Kotlin","Flutter"],client:"アプリ開発会社"},
+  {id:107,name:"社内基幹バッチ刷新 詳細設計〜テスト",start:"10月〜",required:["Java","Spring Batch","PostgreSQL"],client:"事業会社情報システム部"}
+];
+
+const MATCHINGS = [
+  {id:1, projectId:101, staffId:1, staffInitial:"S.T", score:92, approved:false},
+  {id:2, projectId:102, staffId:2, staffInitial:"K.M", score:88, approved:true},
+  {id:3, projectId:103, staffId:3, staffInitial:"R.Y", score:81, approved:false},
+  {id:4, projectId:104, staffId:4, staffInitial:"A.S", score:86, approved:false},
+  {id:5, projectId:105, staffId:3, staffInitial:"T.O", score:90, approved:true},
+  {id:6, projectId:106, staffId:2, staffInitial:"N.F", score:76, approved:false},
+  {id:7, projectId:107, staffId:1, staffInitial:"D.T", score:84, approved:false}
+];
+
+const PROPOSALS = [
+  {id:1, matchingId:2, status:"提案メール送信済み", nextAction:"2026/08/11", destination:"Webサービス企業 採用担当", mail:"ses-front@example.co.jp", interviews:2, memo:"提案メール送信済み。先方から日程候補待ち。"},
+  {id:2, matchingId:5, status:"1回目面談", nextAction:"2026/08/12", destination:"製造業エンド 情シス部", mail:"iot-platform@example.co.jp", interviews:3, memo:"1回目面談調整済み。インフラ設計経験を中心に確認予定。"}
+];
+
 /* =========================================================
    ユーティリティ
    ========================================================= */
@@ -480,6 +527,34 @@ function statusChip(st){
   if(st.startsWith("待機")) return `<span class="chip ok">${esc(st)}</span>`;
   if(st.startsWith("稼働中（")) return `<span class="chip warn">${esc(st)}</span>`;
   return `<span class="chip">${esc(st)}</span>`;
+}
+function proposalStatusChip(st){
+  if(st.includes("面談")) return `<span class="chip pri">${esc(st)}</span>`;
+  if(st.includes("完了")) return `<span class="chip ok">${esc(st)}</span>`;
+  if(st.includes("見送り")) return `<span class="chip warn">${esc(st)}</span>`;
+  return `<span class="chip">${esc(st)}</span>`;
+}
+function projectOf(id){ return PROJECTS.find(p=>p.id===id); }
+function staffOf(id){ return SHEETS.find(s=>s.id===id); }
+function matchingView(m){
+  const project = projectOf(m.projectId), staff = staffOf(m.staffId);
+  return {...m, project, staff};
+}
+function proposalView(p){
+  const matching = matchingView(MATCHINGS.find(m=>m.id===p.matchingId));
+  return {...p, matching, project:matching.project, staff:matching.staff, staffInitial:matching.staffInitial};
+}
+function techText(project){ return project.required.join("、"); }
+function memberTabs(id, active){
+  const tabs = [
+    ["info","info"],
+    ["skill","スキルシート"],
+    ["proposal","提案管理"],
+    ["matching","マッチング"]
+  ];
+  return `<div class="member-tabs">${tabs.map(([key,label])=>
+    `<button class="${active===key?"active":""}" data-member-tab="${key}" data-member-id="${id}">${esc(label)}</button>`
+  ).join("")}</div>`;
 }
 function attendanceSourceLabel(v){
   return ({upper_company:"上位会社", current_member:"参画中メンバー"}[v] || "—");
@@ -607,7 +682,7 @@ function crumb(items){
 }
 
 /* =========================================================
-   画面1: スキルシート一覧
+   画面1: メンバー一覧
    ========================================================= */
 let listFilter = {q:"", status:"", skill:"", attendance:""};
 
@@ -622,10 +697,10 @@ function screenList(){
   const allSkills = [...new Set(SHEETS.flatMap(s=>s.skills.map(k=>k.name)))].sort();
 
   main.innerHTML = `
-  ${crumb([{label:"ホーム"},{label:"スキルシート一覧"}])}
+  ${crumb([{label:"ホーム"},{label:"メンバー一覧"}])}
   <div class="pagehead">
     <div>
-      <h1>スキルシート一覧</h1>
+      <h1>メンバー一覧</h1>
       <p class="sub">登録 ${SHEETS.length} 件／表示 ${rows.length} 件</p>
     </div>
     <div class="acts">
@@ -689,7 +764,7 @@ function screenList(){
             <td class="num">${esc(s.updated)}</td>
             <td><button class="btn sm" data-edit="${s.id}">編集</button></td>
           </tr>`).join("")
-        : `<tr><td colspan="10"><div class="empty">条件に一致するスキルシートがありません。</div></td></tr>`}
+        : `<tr><td colspan="10"><div class="empty">条件に一致するメンバーがありません。</div></td></tr>`}
         </tbody>
       </table>
       </div>
@@ -709,16 +784,155 @@ function screenList(){
   $("#fclear").onclick = () => { listFilter = {q:"",status:"",skill:"",attendance:""}; screenList(); };
 }
 
+function screenMatchingList(){
+  const rows = MATCHINGS.map(matchingView);
+  main.innerHTML = `
+  ${crumb([{label:"ホーム"},{label:"マッチング一覧"}])}
+  <div class="pagehead">
+    <div>
+      <h1>マッチング一覧</h1>
+      <p class="sub">案件とメンバーのマッチング結果を一覧で表示します。行を押すとメンバー詳細のマッチングタブへ遷移します。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bd flush">
+      <div class="ses-list">
+        <div class="ses-row ses-head">
+          <div>案件名</div><div>必須技術</div><div>案件開始時期</div><div>要員名</div><div>点数</div>
+        </div>
+        ${rows.map(r=>`
+          <div class="ses-row" data-match-open="${r.staff.id}">
+            <div>
+              <div class="ses-title">${esc(r.project.name)}</div>
+              <div class="ses-sub">${esc(r.project.client)}${r.approved ? "／承認済み" : ""}</div>
+            </div>
+            <div class="ses-tech">${esc(techText(r.project))}</div>
+            <div>${esc(r.project.start)}</div>
+            <div><strong>${esc(r.staffInitial)}</strong></div>
+            <div class="ses-score">${r.score}点</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  </div>`;
+}
+
+function screenProposalList(){
+  const rows = PROPOSALS.map(proposalView);
+  main.innerHTML = `
+  ${crumb([{label:"ホーム"},{label:"提案管理一覧"}])}
+  <div class="pagehead">
+    <div>
+      <h1>提案管理一覧</h1>
+      <p class="sub">マッチングで承認した提案を一覧で表示します。行を押すとメンバー詳細の提案管理タブへ遷移します。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bd flush">
+      <div class="ses-list">
+        <div class="ses-row proposal ses-head">
+          <div>案件名</div><div>必須技術</div><div>案件開始時期</div><div>要員名</div><div>次回アクション日</div><div>進捗</div>
+        </div>
+        ${rows.map(r=>`
+          <div class="ses-row proposal" data-proposal-open="${r.staff.id}">
+            <div>
+              <div class="ses-title">${esc(r.project.name)}</div>
+              <div class="ses-sub">${esc(r.destination)}</div>
+            </div>
+            <div class="ses-tech">${esc(techText(r.project))}</div>
+            <div>${esc(r.project.start)}</div>
+            <div><strong>${esc(r.staffInitial)}</strong></div>
+            <div><strong>${esc(r.nextAction)}</strong></div>
+            <div>${proposalStatusChip(r.status)}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  </div>`;
+}
+
 /* =========================================================
    画面2: スキルシート詳細
    ========================================================= */
-function screenDetail(id){
+function screenDetail(id, tab="info"){
   const s = SHEETS.find(x=>x.id===id);
   const cat = {};
   s.skills.forEach(k => (cat[k.cat] ||= []).push(k));
+  const tabs = memberTabs(s.id, tab);
+
+  if(tab === "matching"){
+    const rows = MATCHINGS.map(matchingView).filter(r=>r.staff.id===s.id);
+    main.innerHTML = `
+    ${crumb([{label:"ホーム"},{label:"マッチング一覧",nav:"matching"},{label:s.name}])}
+    <div class="pagehead">
+      <div>
+        <h1>${esc(s.name)} <span class="chip pri">${esc(s.code)}</span></h1>
+        <p class="sub">マッチングしている案件をメンバー単位で確認します。</p>
+      </div>
+    </div>
+    ${tabs}
+    <div class="card">
+      <div class="hd"><h2>マッチング案件</h2><span class="chip">${rows.length} 件</span></div>
+      <div class="bd flush">
+        <table class="tbl">
+          <thead><tr><th>案件名</th><th>必須技術</th><th>案件開始時期</th><th>点数</th><th>状態</th></tr></thead>
+          <tbody>${rows.map(r=>`<tr style="cursor:default">
+            <td><strong>${esc(r.project.name)}</strong><div class="ses-sub">${esc(r.project.client)}</div></td>
+            <td>${esc(techText(r.project))}</td>
+            <td>${esc(r.project.start)}</td>
+            <td class="num">${r.score}点</td>
+            <td>${r.approved ? '<span class="chip ok">承認済み</span>' : '<span class="chip">確認中</span>'}</td>
+          </tr>`).join("")}</tbody>
+        </table>
+      </div>
+    </div>`;
+    return;
+  }
+
+  if(tab === "proposal"){
+    const rows = PROPOSALS.map(proposalView).filter(r=>r.staff.id===s.id);
+    const steps = ["提案メール送信","面談","返信待ち","完了"];
+    main.innerHTML = `
+    ${crumb([{label:"ホーム"},{label:"提案管理一覧",nav:"proposal"},{label:s.name}])}
+    <div class="pagehead">
+      <div>
+        <h1>${esc(s.name)} <span class="chip pri">${esc(s.code)}</span></h1>
+        <p class="sub">提案状況、面談回数、次回アクション日をメンバー単位で確認します。</p>
+      </div>
+    </div>
+    ${tabs}
+    ${rows.map(r=>`
+      <div class="card">
+        <div class="hd"><h2>${esc(r.project.name)}</h2>${proposalStatusChip(r.status)}</div>
+        <div class="bd">
+          <div class="timeline" style="margin-bottom:14px">
+            ${steps.map((step,i)=>{
+              const active = r.status.includes("面談") ? step==="面談" : r.status.includes("返信") ? step==="返信待ち" : r.status.includes("完了") ? step==="完了" : step==="提案メール送信";
+              const done = (r.status.includes("面談") && i===0) || (r.status.includes("返信") && i<2) || (r.status.includes("完了") && i<3);
+              return `<span class="step ${active?"active":done?"done":""}"><span class="dot">${done?"✓":i+1}</span>${esc(step)}</span>${i<steps.length-1?'<span class="stepline"></span>':""}`;
+            }).join("")}
+          </div>
+          <div class="dl">
+            <div class="row"><dt>提案先</dt><dd>${esc(r.destination)}</dd></div>
+            <div class="row"><dt>メールアドレス</dt><dd>${esc(r.mail)}</dd></div>
+            <div class="row"><dt>面談回数</dt><dd>${r.interviews}回想定</dd></div>
+            <div class="row"><dt>次回アクション日</dt><dd>${esc(r.nextAction)}</dd></div>
+            <div class="row"><dt>必須技術</dt><dd>${esc(techText(r.project))}</dd></div>
+            <div class="row"><dt>案件開始時期</dt><dd>${esc(r.project.start)}</dd></div>
+          </div>
+          <div style="margin-top:14px">
+            <div style="font-size:11.5px;color:var(--fg-muted);font-weight:700;margin-bottom:.25rem">メモ</div>
+            <p class="pre">${esc(r.memo)}</p>
+          </div>
+        </div>
+      </div>`).join("") || `<div class="card"><div class="bd"><div class="empty">提案管理中の案件はありません。</div></div></div>`}`;
+    return;
+  }
 
   main.innerHTML = `
-  ${crumb([{label:"ホーム"},{label:"スキルシート一覧",nav:"list"},{label:s.name}])}
+  ${crumb([{label:"ホーム"},{label:"メンバー一覧",nav:"members"},{label:s.name}])}
   <div class="pagehead">
     <div>
       <h1>${esc(s.name)} <span class="chip pri">${esc(s.code)}</span> ${s.status==="下書き"?'<span class="chip warn">下書き</span>':""}</h1>
@@ -730,6 +944,8 @@ function screenDetail(id){
       <button class="btn primary" data-edit="${s.id}">✎ 編集</button>
     </div>
   </div>
+
+  ${tabs}
 
   <div class="note info"><p>要件のとおり、Excel帳票をそのまま再現せず、カード・タグ・表で読みやすく構成しています。年齢は生年月日から算出した値です。</p></div>
 
@@ -848,11 +1064,11 @@ function renderEdit(){
   const title = e._mode==="new" ? "スキルシート新規作成"
               : e._mode==="dup" ? "スキルシート複製" : "スキルシート編集";
   main.innerHTML = `
-  ${crumb([{label:"ホーム"},{label:"スキルシート一覧",nav:"list"},{label:title}])}
+  ${crumb([{label:"ホーム"},{label:"メンバー一覧",nav:"members"},{label:title}])}
   <div class="pagehead">
     <div><h1>${esc(title)}</h1><p class="sub">${e.name?esc(e.name):"新規レコード"}${e.code?"／"+esc(e.code):""}</p></div>
     <div class="acts">
-      <button class="btn" data-nav="list">キャンセル</button>
+      <button class="btn" data-nav="members">キャンセル</button>
       <button class="btn" id="saveDraft">下書き保存</button>
       <button class="btn primary" id="saveBtn">保存する</button>
     </div>
@@ -1083,7 +1299,7 @@ const IMPORT_WARN = [
 
 function screenImport(){
   main.innerHTML = `
-  ${crumb([{label:"ホーム"},{label:"スキルシート一覧",nav:"list"},{label:"Excelインポート"}])}
+  ${crumb([{label:"ホーム"},{label:"メンバー一覧",nav:"members"},{label:"Excelインポート"}])}
   <div class="pagehead">
     <div><h1>Excelインポート</h1>
       <p class="sub">既存スキルシートをDBへ初期取り込みします</p></div>
@@ -1207,7 +1423,7 @@ function renderImport(){
         「山本 直樹」のスキルシートをDBへ登録しました。以降はブラウザ上で編集してください。</p>
       <div style="display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap">
         <button class="btn" id="impAgain">続けて別のファイルを取り込む</button>
-        <button class="btn primary" data-nav="list">スキルシート一覧へ戻る</button>
+        <button class="btn primary" data-nav="members">メンバー一覧へ戻る</button>
       </div>
       <p style="font-size:12px;color:var(--fg-muted);margin-top:1.4rem">
         ※ モックのため実際には登録されません。一覧には反映されません。</p>
@@ -1222,15 +1438,20 @@ function go(nav){
   document.querySelectorAll(".side a.item").forEach(a=>a.classList.toggle("active", a.dataset.nav===nav));
   window.scrollTo(0,0);
   if(nav === "import"){ importStep = 1; screenImport(); }
+  else if(nav === "matching"){ screenMatchingList(); }
+  else if(nav === "proposal"){ screenProposalList(); }
   else screenList();
 }
 
 document.addEventListener("click", ev => {
-  const t = ev.target.closest("[data-nav],[data-open],[data-edit],[data-new],[data-dup],[data-pdf]");
+  const t = ev.target.closest("[data-nav],[data-open],[data-edit],[data-new],[data-dup],[data-pdf],[data-match-open],[data-proposal-open],[data-member-tab]");
   if(!t) return;
   if(t.dataset.nav){ ev.preventDefault(); go(t.dataset.nav); return; }
   ev.preventDefault();
   window.scrollTo(0,0);
+  if(t.dataset.memberTab){ screenDetail(+t.dataset.memberId, t.dataset.memberTab); return; }
+  if(t.dataset.matchOpen){ screenDetail(+t.dataset.matchOpen, "matching"); return; }
+  if(t.dataset.proposalOpen){ screenDetail(+t.dataset.proposalOpen, "proposal"); return; }
   if(t.dataset.pdf){ toast("印刷ダイアログを開きます（PDF保存で出力）"); setTimeout(()=>window.print(),400); return; }
   if(t.dataset.new){ screenEdit(null); return; }
   if(t.dataset.dup){ screenEdit(+t.dataset.dup, "dup"); return; }
@@ -1285,7 +1506,7 @@ document.addEventListener("input", ev => {
 });
 
 loadStoredSheets();
-go("list");
+go("members");
 </script>
 </body>
 </html>
