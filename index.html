@@ -764,7 +764,6 @@ function screenList(){
       <p class="sub">登録 ${SHEETS.length} 件／表示 ${rows.length} 件</p>
     </div>
     <div class="acts">
-      <button class="btn" data-nav="import">⇪ Excelインポート</button>
       <button class="btn primary" data-new="1">＋ 新規作成</button>
     </div>
   </div>
@@ -1331,174 +1330,12 @@ function renderTab(){
 }
 
 /* =========================================================
-   画面4: Excelインポート
-   ========================================================= */
-let importStep = 1;
-const IMPORT_PARSED = {
-  name:"山本 直樹", kana:"ヤマモト ナオキ", gender:"男性", birth:"1992-09-15",
-  pref:"千葉県", city:"船橋市", station:"船橋", education:"◎◎大学 理工学部 卒業",
-  empStatus:"待機中", price:"65万円", prefLoc:"東京・千葉", remote:"週2リモート希望",
-  intention:"積極的に検討",
-  skills:[{name:"PHP",cat:"言語",months:84,last:"2026-05"},{name:"Laravel",cat:"FW",months:60,last:"2026-05"},
-          {name:"MySQL",cat:"DB",months:84,last:"2026-05"},{name:"Vue.js",cat:"FW",months:30,last:"2025-11"}],
-  quals:[{name:"基本情報技術者",date:"2015-10",note:""}],
-  careers:[
-    {start:"2021-06",end:"2026-05",current:false,project:"会員制ポータルサイト開発",
-     desc:"会員機能・決済連携の設計から実装まで担当。",role:"サブリーダー",team:5,
-     env:"AWS(EC2/RDS)",tech:"PHP, Laravel, MySQL, Vue.js",phases:["基本設計","詳細設計","製造","テスト"],attendanceSubmissionSource:"upper_company",remarks:""},
-    {start:"2017-04",end:"2021-05",current:false,project:"社内業務システム保守",
-     desc:"既存システムの改修と障害対応。",role:"メンバー",team:3,
-     env:"オンプレLinux",tech:"PHP, MySQL",phases:["製造","テスト","運用保守"],attendanceSubmissionSource:"current_member",remarks:""}
-  ]
-};
-const IMPORT_WARN = [
-  {cell:"C7", item:"生年月日", val:"1992/9/15", msg:"日付書式を自動変換しました（1992-09-15）"},
-  {cell:"E12", item:"希望単価", val:"65〜70万", msg:"数値に変換できないため、そのまま文字列として取り込みます"},
-  {cell:"B31", item:"担当工程", val:"詳細設計〜テスト", msg:"範囲指定のため、詳細設計・製造・テストとして解釈しました"}
-];
-
-function screenImport(){
-  main.innerHTML = `
-  ${crumb([{label:"ホーム"},{label:"メンバー一覧",nav:"members"},{label:"Excelインポート"}])}
-  <div class="pagehead">
-    <div><h1>Excelインポート</h1>
-      <p class="sub">既存スキルシートをDBへ初期取り込みします</p></div>
-  </div>
-
-  <div class="note warn"><p>対象は<strong>自社スキルシート形式1種類のみ</strong>です。他フォーマットはMVP対象外。取り込み後はブラウザ上で編集し、<strong>DBを正本</strong>として運用します（Excelへの再出力は行いません）。</p></div>
-
-  <div class="card"><div class="bd">
-    <div class="stepper">
-      ${[[1,"アップロード"],[2,"解析結果の確認・修正"],[3,"DBへ登録"]].map(([n,l],i)=>`
-        ${i?'<div class="stepline"></div>':""}
-        <div class="step ${importStep===n?"active":importStep>n?"done":""}">
-          <div class="dot">${importStep>n?"✓":n}</div>${l}</div>`).join("")}
-    </div>
-    <div id="impBody"></div>
-  </div></div>`;
-  renderImport();
-}
-
-function renderImport(){
-  const b = $("#impBody");
-
-  if(importStep === 1){
-    b.innerHTML = `
-      <div class="drop">
-        <div class="big">⇪</div>
-        <p><strong>スキルシートのExcelファイルをドロップ</strong><br>または下のボタンから選択してください（.xlsx）</p>
-        <button class="btn primary" id="pick" style="margin-top:.6rem">ファイルを選択</button>
-      </div>
-      <p style="font-size:12px;color:var(--fg-muted);margin-top:.8rem">
-        ※ モックのため、ボタンを押すとサンプルExcel「山本直樹_スキルシート.xlsx」を読み込んだ想定で進みます。</p>`;
-    $("#pick").onclick = () => { importStep = 2; screenImport(); toast("山本直樹_スキルシート.xlsx を解析しました"); };
-    return;
-  }
-
-  if(importStep === 2){
-    const p = IMPORT_PARSED;
-    b.innerHTML = `
-      <div class="note info"><p>解析結果を確認し、必要に応じて修正してください。<strong>この画面で修正した内容がDBへ登録されます。</strong></p></div>
-
-      <div class="card" style="box-shadow:none">
-        <div class="hd"><h2>読み込んだファイル</h2></div>
-        <div class="bd" style="display:flex;gap:.8rem;align-items:center;flex-wrap:wrap">
-          <span class="chip pri">山本直樹_スキルシート.xlsx</span>
-          <span style="font-size:12.5px;color:var(--fg-muted)">シート「スキルシート」／48行を解析</span>
-          <span class="chip ok">基本情報 13項目</span><span class="chip ok">スキル ${p.skills.length}件</span>
-          <span class="chip ok">資格 ${p.quals.length}件</span><span class="chip ok">職歴 ${p.careers.length}件</span>
-          <span class="chip warn">要確認 ${IMPORT_WARN.length}件</span>
-        </div>
-      </div>
-
-      <div class="card" style="box-shadow:none">
-        <div class="hd"><h2>要確認項目</h2><span class="chip warn">${IMPORT_WARN.length} 件</span></div>
-        <div class="bd flush"><div class="tbl-scroll"><table class="tbl">
-          <thead><tr><th style="width:5rem">セル</th><th style="width:9rem">項目</th><th style="width:11rem">Excelの値</th><th>解析結果</th></tr></thead>
-          <tbody>${IMPORT_WARN.map(w=>`<tr style="cursor:default">
-            <td><span class="chip">${esc(w.cell)}</span></td><td>${esc(w.item)}</td>
-            <td><code style="font-size:12px">${esc(w.val)}</code></td><td>${esc(w.msg)}</td></tr>`).join("")}</tbody>
-        </table></div></div>
-      </div>
-
-      <div class="card" style="box-shadow:none">
-        <div class="hd"><h2>基本情報</h2></div>
-        <div class="bd"><div style="${GRID}">
-          ${fld("氏名",p.name)}${fld("フリガナ",p.kana)}${fld("性別",p.gender)}
-          ${fld("生年月日",p.birth,{type:"date"})}
-          <div class="field"><label>年齢</label>
-            <input class="ctl" style="width:100%;background:var(--bg)" value="${ageText(p.birth)}" readonly>
-            <span style="font-size:11px;color:var(--ok)">生年月日から自動算出</span></div>
-          ${fld("都道府県",p.pref)}${fld("市区町村",p.city)}${fld("最寄駅",p.station)}
-          ${fld("最終学歴",p.education,{wide:true})}
-          ${fld("希望単価",p.price)}
-          ${fld("希望勤務地",p.prefLoc)}${fld("リモート希望",p.remote)}
-        </div></div>
-      </div>
-
-      <div class="card" style="box-shadow:none">
-        <div class="hd"><h2>スキル・資格</h2></div>
-        <div class="bd flush"><div class="tbl-scroll"><table class="tbl">
-          <thead><tr><th>スキル名</th><th>カテゴリ</th><th>経験期間</th><th>最終利用</th></tr></thead>
-          <tbody>${p.skills.map(k=>`<tr style="cursor:default"><td><strong>${esc(k.name)}</strong></td>
-            <td>${esc(k.cat)}</td><td class="num">${months2y(k.months)}</td><td class="num">${esc(k.last)}</td></tr>`).join("")}
-            ${p.quals.map(q=>`<tr style="cursor:default"><td colspan="2"><span class="chip">資格</span> <strong>${esc(q.name)}</strong></td>
-            <td colspan="2" class="num">${esc(q.date)} 取得</td></tr>`).join("")}</tbody>
-        </table></div></div>
-      </div>
-
-      <div class="card" style="box-shadow:none">
-        <div class="hd"><h2>職歴</h2><span class="chip">${p.careers.length} 件</span></div>
-        <div class="bd">${p.careers.map((c,i)=>`
-          <div class="career"><div class="top">
-            <div class="no">${i+1}</div><div class="pjname">${esc(c.project)}</div>
-            <div class="term">${esc(term(c))}</div></div>
-            <div class="bd"><div class="dl">
-              <div class="row"><dt>役割</dt><dd>${esc(c.role)}</dd></div>
-              <div class="row"><dt>チーム人数</dt><dd>${c.team}名</dd></div>
-              <div class="row"><dt>勤怠提出元</dt><dd>${attendanceSourceChip(c.attendanceSubmissionSource)}</dd></div>
-              <div class="row"><dt>使用環境</dt><dd>${esc(c.env)}</dd></div>
-              <div class="row"><dt>使用技術</dt><dd>${esc(c.tech)}</dd></div>
-            </div>
-            <div style="margin-top:.6rem"><div style="font-size:11.5px;color:var(--fg-muted);font-weight:700;margin-bottom:.25rem">担当工程</div>
-              <div class="taglist">${c.phases.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div></div>
-          </div></div>`).join("")}
-        </div>
-      </div>
-
-      <div style="display:flex;gap:.6rem;justify-content:flex-end">
-        <button class="btn" id="impBack">‹ 戻る</button>
-        <button class="btn primary" id="impGo">この内容でDBへ登録 ›</button>
-      </div>`;
-    $("#impBack").onclick = () => { importStep = 1; screenImport(); };
-    $("#impGo").onclick   = () => { importStep = 3; screenImport(); };
-    return;
-  }
-
-  b.innerHTML = `
-    <div style="text-align:center;padding:2rem 1rem">
-      <div style="font-size:40px;color:var(--ok);line-height:1">✓</div>
-      <h2 style="margin:.5rem 0 .3rem;font-size:17px">取り込みが完了しました</h2>
-      <p style="color:var(--fg-muted);margin:0 0 1.2rem">
-        「山本 直樹」のスキルシートをDBへ登録しました。以降はブラウザ上で編集してください。</p>
-      <div style="display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap">
-        <button class="btn" id="impAgain">続けて別のファイルを取り込む</button>
-        <button class="btn primary" data-nav="members">メンバー一覧へ戻る</button>
-      </div>
-      <p style="font-size:12px;color:var(--fg-muted);margin-top:1.4rem">
-        ※ モックのため実際には登録されません。一覧には反映されません。</p>
-    </div>`;
-  $("#impAgain").onclick = () => { importStep = 1; screenImport(); };
-}
-
-/* =========================================================
    ルーティング
    ========================================================= */
 function go(nav){
   document.querySelectorAll(".side a.item").forEach(a=>a.classList.toggle("active", a.dataset.nav===nav));
   window.scrollTo(0,0);
-  if(nav === "import"){ importStep = 1; screenImport(); }
-  else if(nav === "matching"){ screenMatchingList(); }
+  if(nav === "matching"){ screenMatchingList(); }
   else if(nav === "proposal"){ screenProposalList(); }
   else screenList();
 }
