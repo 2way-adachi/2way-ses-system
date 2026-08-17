@@ -1,0 +1,18 @@
+-- ----------------------------------------------------------------------------
+-- ★このファイルは廃止。docs/ddl/schema-ses.sql に統合済み（2026-08-09）★
+--
+-- スキルシート機能（担当B）側の docs/ddl/schema-ses.sql（2026-08-05作成）と
+-- 本ファイル（マッチング・提案管理Phase1、2026-08-07作成）に分かれていたDDLを
+-- 人間判断により1本化した。以後のDDL変更は docs/ddl/schema-ses.sql を直接編集すること。
+--
+-- 統合版: /home/hp/claude/2way-ses-system/docs/ddl/schema-ses.sql
+--         （thymeリポジトリ側コピー: docs/ddl/schema-ses.sql も同時に更新済み）
+--
+-- 統合時の変更点（詳細は統合版ファイル冒頭のコメント参照）:
+--   - projects / project_skills は本ファイルの定義（luna抽出スキーマ準拠）を正として採用
+--   - mails / staff_candidates / mail_import_histories を data-model.md §3
+--     （2026-08-06改訂版）に合わせて刷新
+--
+-- db/phase1_seed.sql は統合版スキーマに対してそのまま投入可能（Docker検証済み）。
+-- gen_seed.py の出力先も変更なし
+-- ----------------------------------------------------------------------------
