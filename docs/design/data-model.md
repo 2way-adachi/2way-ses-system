@@ -3,7 +3,7 @@
 MVP向けの論理データモデルを整理する。
 
 - 作成日: 2026-08-03
-- 更新日: 2026-08-04（Lavender組み込み方針を反映）
+- 更新日: 2026-08-17（要員メール、メンバー、マッチング、提案管理を反映）
 - **ステータス: 本データモデルは確定仕様ではなく、MVP開始時点の案である。** 工程1（仕様固定）で見直す前提とする。
 
 ## 0. 配置方針（2026-08-04 決定）
@@ -35,7 +35,11 @@ MVP向けの論理データモデルを整理する。
 | `skill_sheet_skills` | スキル（スキル名を直接保持） |
 | `qualifications` | 資格 |
 | `skill_sheet_drafts` | スキルシート編集中の下書き |
-| `projects` | 案件 |
+| `projects` | 案件メールから取得した案件 |
+| `staff_candidates` | 要員メールから取得した要員 |
+| `members` | 営業管理対象のメンバー |
+| `matchings` | 案件と要員またはメンバーのマッチング結果 |
+| `proposals` | 承認済みマッチングを起点とした提案管理 |
 | `mail_import_histories` | メール取り込み履歴 |
 
 ---
@@ -138,7 +142,7 @@ MVP向けの論理データモデルを整理する。
 
 - **スキルマスタは持たない**（2026-08-05 決定）。スキル名を直接保持する
   - 画面がスキル名を自由入力とするため、マスタを設けても形骸化する
-  - 仮マッチングも文字列比較を前提とする
+  - マッチングも文字列比較を前提とする
   - 表記ゆれは許容する。将来マスタ化する余地は残す
 - `experience_months` / `last_used_date` の自動集計はMVPでは必須としない
 - 職歴ごとの使用技術は `skill_sheet_careers.technology` に文字列で保持する
@@ -193,7 +197,7 @@ MVP向けの論理データモデルを整理する。
 
 ---
 
-## 3. 案件系
+## 3. 案件・要員メール系
 
 ### 3.1 projects
 
@@ -217,9 +221,116 @@ MVP向けの論理データモデルを整理する。
 補足：
 
 - `source_mail_id` を重複登録防止のキーとして利用する想定
-- `required_skills_text` は抽出元の文字列を保持し、仮マッチングで単純比較に利用する
+- `required_skills_text` は抽出元の文字列を保持し、マッチングで比較に利用する
 
-### 3.2 mail_import_histories
+### 3.2 staff_candidates
+
+要員メールから取得した要員情報を保持する。
+
+候補項目：
+
+- id
+- name_initial
+- mail_subject
+- original_body
+- skills_text
+- nearest_station
+- affiliation
+- unit_price_min
+- unit_price_max
+- start_date
+- sender
+- received_at
+- source_mail_id
+- member_id
+- created_at
+- updated_at
+
+補足：
+
+- 要員メール由来の情報は、メンバー正本とは分けて保持する
+- `member_id` はメンバー化済みの場合に紐づける。未紐づけの要員候補も保持できるようにする
+- `skills_text` は抽出元の文字列を保持し、マッチングで比較に利用する
+
+### 3.3 members
+
+メンバー一覧、メンバー詳細の正本となる情報を保持する。
+
+候補項目：
+
+- id
+- skill_sheet_id
+- name
+- name_initial
+- gender
+- birth_date
+- nearest_station
+- affiliation
+- unit_price_min
+- unit_price_max
+- start_date
+- status
+- created_at
+- updated_at
+
+補足：
+
+- スキルシートは `skill_sheet_id` で紐づけ、メンバー詳細の「スキルシート」タブで表示する
+- infoタブ、提案タブ、マッチングタブは `members.id` を起点に関連情報を取得する
+
+### 3.4 matchings
+
+案件と要員またはメンバーのマッチング結果を保持する。
+
+候補項目：
+
+- id
+- project_id
+- staff_candidate_id
+- member_id
+- score
+- status
+- reason
+- matched_skills_text
+- missing_skills_text
+- memo
+- created_at
+- updated_at
+
+補足：
+
+- `status` は確認待ち、承認済み、見送りなどを表す
+- マッチング一覧から行を押下した場合、`member_id` を使ってメンバー詳細のマッチングタブを表示する
+- 承認済みのマッチングは提案管理の対象になる
+
+### 3.5 proposals
+
+承認済みマッチングを起点とした提案状況を保持する。
+
+候補項目：
+
+- id
+- matching_id
+- member_id
+- project_id
+- status
+- proposal_to
+- contact_email
+- next_action_date
+- memo
+- mail_subject
+- mail_body
+- sent_at
+- created_at
+- updated_at
+
+補足：
+
+- `status` は提案メール送信済み、1回目面談、2回目面談、先方返信待ち、完了、見送りなどを表す
+- 提案管理一覧から行を押下した場合、`member_id` を使ってメンバー詳細の提案タブを表示する
+- `next_action_date` は提案管理一覧、メンバー詳細の提案タブで表示、更新する
+
+### 3.6 mail_import_histories
 
 候補項目：
 
@@ -235,18 +346,23 @@ MVP向けの論理データモデルを整理する。
 ## 4. 関連イメージ
 
 ```text
-skill_sheets 1 --- * skill_sheet_careers 1 --- * career_phases
+members 1 --- 0..1 skill_sheets 1 --- * skill_sheet_careers 1 --- * career_phases
              +--- * skill_sheet_skills   （スキル名を直接保持。マスタなし）
              +--- * qualifications
              +--- * skill_sheet_drafts   （ユーザー×シート単位。正式保存/キャンセルで削除）
 
-projects              （案件。メール取り込みにより登録）
+projects         （案件メールから登録）
+staff_candidates （要員メールから登録。メンバーへ紐づけ可能）
+members 1 --- * matchings  * --- 1 projects
+members 1 --- * proposals  * --- 1 projects
+matchings 1 --- 0..1 proposals
 mail_import_histories （取り込み実行履歴）
 ```
 
 就業状況・勤怠提出元は `skill_sheets` に持たず、`skill_sheet_careers` から導出する。
 
-仮マッチングは `projects.required_skills_text` と `skill_sheet_skills.name` を単純比較して算出する。
+マッチングは `projects.required_skills_text` と `staff_candidates.skills_text` または
+メンバーのスキルシート情報を比較して算出する。
 
 ---
 
