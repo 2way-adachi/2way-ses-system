@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>SES管理システム 画面モック | 2way-ses-system</title>
+<title>2way Manage system SES画面モック | 2way-ses-system</title>
 <style>
 :root{
   --primary:#1e5eb8; --primary-dark:#17488d; --primary-soft:#e8f0fb;
@@ -239,6 +239,67 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
   body{background:#fff}
   .card{box-shadow:none;break-inside:avoid}
 }
+
+/* ---------- Lavender / Material-UI preview theme ---------- */
+:root{
+  --primary:#3f51b5; --primary-dark:#303f9f; --primary-soft:#eef0fb;
+  --bg:#fafafa; --surface:#fff; --fg:#222; --fg-muted:#666;
+  --border:#e0e0e0; --border-strong:#bdbdbd;
+  --shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.18);
+  --radius:4px; --header-h:64px; --sidebar-w:240px;
+}
+body{
+  background:var(--bg);
+  font-family:'BIZ UDPGothic','Yu Gothic',YuGothic,'Hiragino Kaku Gothic Pro',Meiryo,Osaka,'MS PGothic',sans-serif;
+}
+.mockbar{display:none}
+header.appbar{
+  position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:1201;
+  background:var(--primary);padding:0 24px;box-shadow:0 2px 4px rgba(0,0,0,.2);
+}
+.appbar .logo{font-size:20px;font-weight:500;letter-spacing:0}
+.appbar .logo span{display:none}
+.appbar .user{font-size:14px}
+.avatar{background:rgba(255,255,255,.2)}
+.shell{display:block;min-height:100vh}
+nav.side{
+  position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);z-index:1100;
+  padding:var(--header-h) 0 24px;background:#e0e0e8;border-right:0;overflow-y:auto;
+}
+main{margin-left:var(--sidebar-w);padding:88px 24px 48px;min-width:0}
+.side .grp{
+  padding:10px 16px 4px;font-size:12px;font-weight:400;letter-spacing:0;color:rgba(0,0,0,.54);text-transform:none;
+}
+.side a.item{
+  min-height:48px;padding:10px 16px 10px 24px;border-left:0;color:rgba(0,0,0,.87);
+  font-size:14px;gap:0;background:transparent;
+}
+.side a.item:hover{background:rgba(0,0,0,.04)}
+.side a.item.active{background:rgba(63,81,181,.12);border-left:0;color:rgba(0,0,0,.87);font-weight:500}
+.side a.item.disabled{color:rgba(0,0,0,.45);pointer-events:none}
+.side .ico{display:none}
+.side .badge{display:none}
+.card{border-radius:4px;box-shadow:var(--shadow);border:0}
+.card>.hd{background:#fff;border-bottom:1px solid var(--border)}
+.btn{border-radius:4px;text-transform:none}
+.btn.primary{box-shadow:0 2px 2px rgba(0,0,0,.14),0 3px 1px -2px rgba(0,0,0,.2),0 1px 5px rgba(0,0,0,.12)}
+.crumb{display:none}
+.pagehead h1{font-size:22px;font-weight:500}
+.pagehead .sub{color:rgba(0,0,0,.6)}
+.ctl{border-radius:4px}
+.tag{border-radius:4px}
+table.tbl th{background:#fff;color:rgba(0,0,0,.56);letter-spacing:0}
+table.tbl tbody tr:hover,.ses-row:hover{background:rgba(63,81,181,.08)}
+.ses-head,.ses-head:hover{background:#fff}
+.member-tabs button.active{color:var(--primary);border-bottom-color:var(--primary)}
+@media (max-width:860px){
+  header.appbar{height:56px}
+  nav.side{position:static;width:auto;padding:56px 0 0;display:flex;background:#e0e0e8;overflow-x:auto;height:auto}
+  main{margin-left:0;padding:16px}
+  .side .grp{display:none}
+  .side a.item{min-height:44px;white-space:nowrap;padding:8px 14px}
+}
 </style>
 </head>
 <body>
@@ -249,7 +310,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
 </div>
 
 <header class="appbar">
-  <div class="logo">SES管理システム<span>画面モック</span></div>
+  <div class="logo">2way Manage system<span>SES画面モック</span></div>
   <div class="spacer"></div>
   <div class="user"><span>営業部 田中</span><div class="avatar">田</div></div>
 </header>
@@ -262,7 +323,6 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
     <a class="item active" href="#" data-nav="members"><span class="ico">▤</span>メンバー一覧<span class="badge" id="navCount">4</span></a>
     <a class="item" href="#" data-nav="matching"><span class="ico">⇄</span>マッチング一覧</a>
     <a class="item" href="#" data-nav="proposal"><span class="ico">✓</span>提案管理一覧</a>
-    <a class="item" href="#" data-nav="import"><span class="ico">⇪</span>Excelインポート</a>
   </nav>
 
   <main id="main"></main>
