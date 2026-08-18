@@ -104,7 +104,7 @@
 | 22 | **スキル経験年数はまず表示のみ**（一致スキルに要員の年数を併記。判定には使わない）。判定への利用は**検討中＝相談のうえ決定**（案件側要求年数の抽出＋精度検証が前提） | [プロトタイプ突き合わせ 4.5](../design/matching-prototype-alignment.md) |
 | 23 | パスワード長の不整合は**登録画面側に12文字上限を追加**して解消（既存ログイン画面は変更しない。上限拡大は将来のポリシー見直し時に両側同時） | 実装現状の記録 |
 | 24 | **NGワードは判定軸に採用しない**（保持場所・判定対象の定義が必要になった時点で再検討） | [プロトタイプ突き合わせ 4章](../design/matching-prototype-alignment.md) |
-| 25 | **マッチングスコア新仕様（上流2ab7445）の採用と詳細確定**。skillScore=必須80%＋尚可20%（片側0件はもう片方を100%扱い）。conditionChecksは7軸（個人事業主を追加）・各軸に理由文字列。境界値: 単価乖離5万円以内/開始遅れ1ヶ月以内/年齢超過5歳以内=WARNING・超えたらNG。稼働形態は対応表判定。**商流はOK/WARNING/NGの3値**（own_plus_support×BP=WARNING。OK/NG二値からの変更は上流同意済み）。null軸はOK＋理由「判定材料なし」。NG1件で対象外。conditionFactor=1.00/0.90/0.80/0.70。match_snapshotは**バージョン付きv2**（既存v1は移行せず従来表示） | [API契約](../design/phase1-api-contract.md)・[データモデル](../design/data-model.md)・[プロトタイプ突き合わせ 4章1e](../design/matching-prototype-alignment.md) |
+| 25 | **マッチングスコア新仕様（上流2ab7445）の採用と詳細確定**。skillScore=必須80%＋尚可20%（片側0件はもう片方を100%扱い）。conditionChecksは7軸（個人事業主を追加）・各軸に理由文字列。境界値: 単価乖離5万円以内/開始遅れ1ヶ月以内/年齢超過5歳以内=WARNING・超えたらNG。稼働形態は対応表判定。**商流はOK/WARNING/NGの3値**（own_plus_support×BP=WARNING。OK/NG二値からの変更は上流同意済み）。null軸はOK＋理由「判定材料なし」。NG1件で対象外。conditionFactor=1.00/0.90/0.80/0.70。match_snapshotは**バージョン付きv2**（既存v1は移行せず従来表示）。実機検証反映: 単価は**対の値が揃えば部分判定**（要員min×案件max等。メール由来案件は上限のみ記載が多数派のため） | [API契約](../design/phase1-api-contract.md)・[データモデル](../design/data-model.md)・[プロトタイプ突き合わせ 4章1e](../design/matching-prototype-alignment.md) |
 
 ### 検証記録（#22 経験年数の判定利用）
 

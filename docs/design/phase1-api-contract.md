@@ -57,11 +57,12 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
 
 ```json
 { "candidates": [ {
-    "personnel": { "id": 1, "name": "...", "personnelType": "employee" },
+    "personnel": { "id": 1, "name": "...", "personnelType": "employee",
+                   "nearestStation": "品川", "preferredLocation": "東京23区" },
     "score": 0.58,
     "skillScore": 0.72,
     "conditionFactor": 0.80,
-    "matchedSkills": ["Java", "Spring Boot"],
+    "matchedSkills": [ { "name": "Java", "years": 5 }, { "name": "Spring Boot", "years": null } ],
     "missingSkills": ["AWS"],
     "conditionChecks": {
       "price": { "status": "OK", "reason": "案件上限80万円 / 要員希望75万円" },
@@ -87,7 +88,11 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
   - `location` は初期版では自動判定せず、案件側の場所と要員側の希望エリアを画面表示して営業担当が判断する
 - 各軸の境界（2026-08-18 決定#25。判定に必要な値が片方でもnullの軸は **OK＋理由「判定材料なし」**）
   - `price`: レンジが重なればOK。重ならない場合、乖離が**5万円以内**ならWARNING、超えたらNG
-    （要員希望が案件レンジより安い方向は常にOK）
+    （要員希望が案件レンジより安い方向は常にOK）。
+    4値が揃わなくても**判定に使う対の値が揃えば部分判定する**（2026-08-18 実機検証反映）:
+    要員希望min × 案件上限max で「高すぎる」方向、要員希望max × 案件下限min で「安い」方向を判定。
+    対が1つも揃わない場合のみOK＋「判定材料なし」（メール由来案件は上限のみ記載が多数派のため、
+    4値必須にするとprice軸が実運用でほぼ機能しない）
   - `startDate`: 要員の稼働可能時期 ≦ 案件開始でOK。遅れ**1ヶ月以内**はWARNING、超えたらNG
     （要員が早く空く方向は常にOK）
   - `age`: 案件上限以下でOK。超過**5歳以内**はWARNING、超えたらNG
@@ -107,6 +112,9 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
   - `WARNING` 2件: `conditionFactor = 0.80`
   - `WARNING` 3件以上: `conditionFactor = 0.70`
   - `score = skillScore * conditionFactor`
+- `matchedSkills` は決定#22-Aにより `{name, years|null}` 構造（要員の経験年数を併記。missingSkillsは名前配列のまま）
+- 場所の参考表示用に、候補側refは要員の `nearestStation`・`preferredLocation` を、適合案件側refは案件の
+  `location` を含める（自動判定はしない。営業判断材料としての並記用）
 - `reason` は **Phase 2（LLM）用の席**。Phase 1では常にnull。フロントはnull時に非表示
 - レスポンス形状（2026-08-07 確定）: `/projects/{id}/candidates` は `{ "candidates": [...] }`、
   `/personnel/{id}/matches` は `{ "matches": [...] }`（中身の行構造は同一）

@@ -102,15 +102,21 @@ Lavender／thyme上の実装の現状を記録する文書。**要件ではな�
 
 ### マッチング
 
-- スコア = 一致スキル数 ÷ 案件側スキルタグ数（skill_id集合の一致）
-- ハードフィルタ: 稼働可能時期 <= 案件開始時期／単価レンジの重なり（未指定は通過）
-- 双方向（案件→候補要員／要員→適合案件）、スコア降順で上位20件。推薦理由はPhase2のLLM用の席のみ
-- **仕様変更により未追従**: 今後の仕様では、スキル評価を必須スキル80%・尚可スキル20%で算出し、
-  条件適合を項目別に判定する。単価・稼働形態・稼働開始時期・年齢はOK/WARNING/NG、
-  外国籍可否・商流はOK/NG。場所は初期版では自動判定せず、画面表示して営業担当が判断する。
-  NGが1件でもあればマッチング対象外とし、NGがない場合はWARNING件数から条件係数を決め、
-  `score = skill_score * condition_factor` で総合点を算出する。判定理由は `condition_checks` として保持し、
-  提案作成時の `match_snapshot` に凍結する。
+- **新スコア仕様（決定#25）を実装済み（2026-08-18。devDB実機検証済み）**。仕様の正は
+  [phase1-api-contract.md](../design/phase1-api-contract.md) マッチング節
+- skillScore = 必須スキル一致率×0.8＋尚可一致率×0.2（片側0件はもう片方100%扱い）。必須/尚可は
+  project_skills.required で区別し、タグ付けは required_skills_text / preferred_skills_text の
+  原文出現で区分（どちらにも出現しない語は必須扱い）。既存データは再照合APIで新区分に収束
+- conditionChecks 7軸（単価・稼働形態・開始時期・年齢・商流=OK/WARNING/NG、外国籍・個人事業主=OK/NG）、
+  各軸に日本語の理由。単価は対の値が揃えば部分判定（上限のみ記載の案件でも判定）
+- NG1件で候補から除外。conditionFactor=1.00/0.90/0.80/0.70、score=skillScore×conditionFactor
+  （小数第2位丸め・表示は0〜100点）。ソートはscore降順→一致数降順、上位20件
+- match_snapshotはversion付きv2で凍結（既存v1は無移行で従来表示）
+- 実装メモ: 要員側の remote_preference・preferred_location は skill_sheets 側のカラムのため
+  紐付きスキルシート経由で取得（未紐付けは「判定材料なし」でOK通過）
+- フロントは総合点1軸＋内訳テーブル（skillScore×conditionFactor・条件別status/理由・場所参考行）を
+  共通コンポーネント matchBreakdown で3画面＋提案控えに表示
+- 双方向（案件→候補要員／要員→適合案件）、推薦理由はPhase2のLLM用の席のみ（従来どおり）
 
 ### スキルマスタ
 
