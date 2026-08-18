@@ -82,9 +82,10 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
   - `skillScore = 必須スキル一致率 * 0.8 + 尚可スキル一致率 * 0.2`
   - 片側の総数が0件の場合はもう片方の一致率をそのまま `skillScore` とする
     （尚可0件なら必須一致率×1.0、必須0件なら尚可一致率×1.0。両方0件は0）
-- 条件適合は `conditionChecks` に項目別の判定と理由を保持する（7軸。2026-08-18 決定#25）
+- 条件適合は `conditionChecks` に項目別の判定と理由を保持する（8軸。2026-08-18 決定#25・#26）
   - `price` / `workStyle` / `startDate` / `age` / `commercialFlow`: `OK` / `WARNING` / `NG`
   - `nationality` / `freelancer`（個人事業主）: `OK` / `NG`
+  - `skillYears`（経験年数）: `OK` / `WARNING`（**NGなし**。2026-08-18 決定#26）
   - `location` は初期版では自動判定せず、案件側の場所と要員側の希望エリアを画面表示して営業担当が判断する
 - 各軸の境界（2026-08-18 決定#25。判定に必要な値が片方でもnullの軸は **OK＋理由「判定材料なし」**）
   - `price`: レンジが重なればOK。重ならない場合、乖離が**5万円以内**ならWARNING、超えたらNG
@@ -105,6 +106,11 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
     **WARNING＋理由「条件付き可（要営業確認）」**（2026-08-18 上流同意済みでOK/NG二値から変更）。それ以外はOK
   - `nationality`: 案件が外国籍不可 × 要員が外国籍 → NG。それ以外はOK
   - `freelancer`: 案件が個人事業主不可 × 要員が個人事業主 → NG。それ以外はOK
+  - `skillYears`: 一致スキルのうち、案件側に要求年数（`project_skills.required_years`。取込時にLLM抽出=prompt v4）が
+    あり、要員の経験年数が不足するものが1つでもあれば **WARNING**（軸として1件。複数スキル不足でもWARNINGは1つ）。
+    理由に不足スキルを列挙（例「Java: 要求5年 / 要員3年」）。要員側の年数未登録・案件側の要求年数なしは判定対象外
+    （すべて対象外ならOK＋「判定材料なし」）。**NGにはしない**（「目安」「〜程度」表現が多く、
+    ハード足切りは実態より厳しくなるため。精度検証は skill-years-extraction-verification.md）
 - 条件適合に `NG` が1件でも含まれる場合はマッチング対象外とし、候補一覧には返さない
 - `NG` がない場合、`WARNING` 件数に応じて `conditionFactor` を決め、総合点 `score` を算出する
   - `WARNING` 0件: `conditionFactor = 1.00`
