@@ -106,6 +106,7 @@
 | 24 | **NGワードは判定軸に採用しない**（保持場所・判定対象の定義が必要になった時点で再検討） | [プロトタイプ突き合わせ 4章](../design/matching-prototype-alignment.md) |
 | 25 | **マッチングスコア新仕様（上流2ab7445）の採用と詳細確定**。skillScore=必須80%＋尚可20%（片側0件はもう片方を100%扱い）。conditionChecksは7軸（個人事業主を追加）・各軸に理由文字列。境界値: 単価乖離5万円以内/開始遅れ1ヶ月以内/年齢超過5歳以内=WARNING・超えたらNG。稼働形態は対応表判定。**商流はOK/WARNING/NGの3値**（own_plus_support×BP=WARNING。OK/NG二値からの変更は上流同意済み）。null軸はOK＋理由「判定材料なし」。NG1件で対象外。conditionFactor=1.00/0.90/0.80/0.70。match_snapshotは**バージョン付きv2**（既存v1は移行せず従来表示）。実機検証反映: 単価は**対の値が揃えば部分判定**（要員min×案件max等。メール由来案件は上限のみ記載が多数派のため） | [API契約](../design/phase1-api-contract.md)・[データモデル](../design/data-model.md)・[プロトタイプ突き合わせ 4章1e](../design/matching-prototype-alignment.md) |
 | 26 | **経験年数を判定に採用**（#22の未決部分を決定）。conditionChecksの**8軸目 `skillYears`（OK/WARNINGのみ・NGなし）**: 一致スキルに案件側要求年数があり要員の年数が不足すればWARNING1件＋不足スキルを理由に列挙。案件側要求年数は取込時LLM抽出（prompt v4）で `project_skills.required_years` に保持。**既存全案件は検証方式流用でバックフィル**。8軸化の上流仕様更新は商流3値と同様に進める | [API契約](../design/phase1-api-contract.md)・[プロトタイプ突き合わせ 4.5](../design/matching-prototype-alignment.md)・[精度検証](../design/skill-years-extraction-verification.md) |
+| 27 | **スキルマスタで Spring と Spring Boot は別スキルとして維持する**（統合しない。案件原文「Spring N年」の年数はSpringタグに付き、Spring Boot保有要員の年数判定対象外になるが、区別を優先する判断） | スキルマスタ運用 |
 
 ### 検証記録（#22 経験年数の判定利用）
 
