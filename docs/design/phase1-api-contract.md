@@ -40,7 +40,13 @@ GET /ses/projects/{id}                   詳細
 
 フィールドはluna抽出スキーマ準拠: `title, requiredSkillsText, preferredSkillsText,
 priceText, unitPriceMin, unitPriceMax, location, remoteType, startYm, startText,
-interviewCount, description` + `status`(open/closed) + `skills[]`（マスタ紐付け済みタグ）
+interviewCount, description, nationalityAllowed, ageLimit, commercialFlow` + `status`(open/closed) +
+`skills[]`（マスタ紐付け済みタグ）
+
+- `location` は表示・営業判断用。初期版では自動判定対象にしない
+- `nationalityAllowed` は外国籍可否の条件判定に利用する
+- `ageLimit` は案件側の年齢条件として、要員年齢（`birthDate` から算出）との条件判定に利用する
+- `commercialFlow` は社員のみ/BP可などの条件判定に利用する
 
 ## マッチング（①ハードフィルタ＋②タグ粗マッチ）
 
@@ -52,15 +58,37 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
 ```json
 { "candidates": [ {
     "personnel": { "id": 1, "name": "...", "personnelType": "employee" },
-    "score": 0.72,
+    "score": 0.58,
+    "skillScore": 0.72,
+    "conditionFactor": 0.80,
     "matchedSkills": ["Java", "Spring Boot"],
     "missingSkills": ["AWS"],
+    "conditionChecks": {
+      "price": { "status": "OK", "reason": "案件上限80万円 / 要員希望75万円" },
+      "workStyle": { "status": "WARNING", "reason": "案件は週2出社 / 要員は週1出社まで希望" },
+      "startDate": { "status": "OK", "reason": "案件開始9/1 / 要員参画可能9/1" },
+      "nationality": { "status": "OK", "reason": "案件は外国籍可" },
+      "age": { "status": "WARNING", "reason": "案件40歳まで / 要員42歳" },
+      "commercialFlow": { "status": "OK", "reason": "案件はBP可 / 要員はBP" }
+    },
     "reason": null } ] }
 ```
 
-- ①: status=available かつ availableFrom<=案件開始（開始不明なら通す）、
-  単価は双方に値がある場合のみレンジ重なり判定
-- ②: score = 一致スキル数 / 案件要求スキル数。同点は一致数降順
+- スキル評価: 必須スキル一致率を80%、尚可スキル一致率を20%として `skillScore` を算出する
+  - 必須スキル一致率 = 一致した必須スキル数 / 必須スキル総数
+  - 尚可スキル一致率 = 一致した尚可スキル数 / 尚可スキル総数
+  - `skillScore = 必須スキル一致率 * 0.8 + 尚可スキル一致率 * 0.2`
+- 条件適合は `conditionChecks` に項目別の判定と理由を保持する
+  - `price` / `workStyle` / `startDate` / `age`: `OK` / `WARNING` / `NG`
+  - `nationality` / `commercialFlow`: `OK` / `NG`
+  - `location` は初期版では自動判定せず、案件側の場所と要員側の希望エリアを画面表示して営業担当が判断する
+- 条件適合に `NG` が1件でも含まれる場合はマッチング対象外とし、候補一覧には返さない
+- `NG` がない場合、`WARNING` 件数に応じて `conditionFactor` を決め、総合点 `score` を算出する
+  - `WARNING` 0件: `conditionFactor = 1.00`
+  - `WARNING` 1件: `conditionFactor = 0.90`
+  - `WARNING` 2件: `conditionFactor = 0.80`
+  - `WARNING` 3件以上: `conditionFactor = 0.70`
+  - `score = skillScore * conditionFactor`
 - `reason` は **Phase 2（LLM）用の席**。Phase 1では常にnull。フロントはnull時に非表示
 - レスポンス形状（2026-08-07 確定）: `/projects/{id}/candidates` は `{ "candidates": [...] }`、
   `/personnel/{id}/matches` は `{ "matches": [...] }`（中身の行構造は同一）

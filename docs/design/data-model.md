@@ -233,6 +233,10 @@ MVP向けの論理データモデルを整理する。
 - unit_price_min
 - unit_price_max
 - start_date
+- remote_type
+- nationality_allowed
+- age_limit
+- commercial_flow
 - sender
 - received_at
 - source_mail_id
@@ -243,6 +247,8 @@ MVP向けの論理データモデルを整理する。
 
 - `source_mail_id` を重複登録防止のキーとして利用する想定
 - `required_skills_text` は抽出元の文字列を保持し、マッチングで比較に利用する
+- `location` は初期版では自動判定対象にせず、表示・営業判断用として保持する
+- `nationality_allowed` は外国籍可否、`age_limit` は年齢条件、`commercial_flow` は社員のみ/BP可などの商流条件としてマッチング判定に利用する
 
 ### 3.2 staff_candidates
 
@@ -257,6 +263,7 @@ MVP向けの論理データモデルを整理する。
 - skills_text
 - nearest_station
 - affiliation
+- nationality
 - unit_price_min
 - unit_price_max
 - start_date
@@ -272,6 +279,7 @@ MVP向けの論理データモデルを整理する。
 - 要員メール由来の情報は、メンバー正本とは分けて保持する
 - `member_id` はメンバー化済みの場合に紐づける。未紐づけの要員候補も保持できるようにする
 - `skills_text` は抽出元の文字列を保持し、マッチングで比較に利用する
+- `nationality` は案件側の外国籍可否条件との判定に利用する
 
 ### 3.3 members
 
@@ -287,6 +295,7 @@ MVP向けの論理データモデルを整理する。
 - birth_date
 - nearest_station
 - affiliation
+- nationality
 - unit_price_min
 - unit_price_max
 - start_date
@@ -298,6 +307,7 @@ MVP向けの論理データモデルを整理する。
 
 - スキルシートは `skill_sheet_id` で紐づけ、メンバー詳細の「スキルシート」タブで表示する
 - infoタブ、提案タブ、マッチングタブは `members.id` を起点に関連情報を取得する
+- `nationality` は案件側の外国籍可否条件との判定に利用する
 
 ### 3.4 matchings
 
@@ -310,6 +320,9 @@ MVP向けの論理データモデルを整理する。
 - staff_candidate_id
 - member_id
 - score
+- skill_score
+- condition_factor
+- condition_checks
 - status
 - reason
 - matched_skills_text
@@ -321,6 +334,18 @@ MVP向けの論理データモデルを整理する。
 補足：
 
 - `status` は確認待ち、承認済み、見送りなどを表す
+- `skill_score` は必須スキル一致率80%・尚可スキル一致率20%で算出したスキル評価を表す
+- `condition_factor` は条件適合の `WARNING` 件数から決める係数を表す
+  - `WARNING` 0件: 1.00
+  - `WARNING` 1件: 0.90
+  - `WARNING` 2件: 0.80
+  - `WARNING` 3件以上: 0.70
+- `score` は総合点を表し、`score = skill_score * condition_factor` で算出する
+- 条件適合に `NG` が1件でも含まれる場合はマッチング対象外とする
+- `condition_checks` は単価、稼働形態、稼働開始時期、外国籍可否、年齢、商流の項目別判定と理由を保持する
+  - 単価、稼働形態、稼働開始時期、年齢: OK / WARNING / NG
+  - 外国籍可否、商流: OK / NG
+  - 場所は初期版では自動判定対象外とし、案件側の場所と要員側の希望エリアを表示して営業担当が判断する
 - マッチング一覧から行を押下した場合、`member_id` を使ってメンバー詳細のマッチングタブを表示する
 - 承認済みのマッチングは提案管理の対象になる
 
@@ -411,8 +436,10 @@ matchings
   UNIQUE (project_id, personnel_id)
 ```
 
-- スコア・一致スキルは**保存しない**（都度計算。承認時のスナップショットも持たない。
+- スコア・一致スキル・条件別判定は**承認状態テーブルには保存しない**（都度計算。承認時のスナップショットも持たない。
   根拠の凍結は提案作成時の `proposals.match_snapshot` が担う）
+- `proposals.match_snapshot` には、必須/尚可スキルの一致状況、`skill_score`、`condition_factor`、`score`、単価・稼働形態・稼働開始時期・外国籍可否・年齢・商流の
+  `condition_checks`（判定結果と理由）を含める
 - `proposals` に `matching_id`（NULL可）を追加し、承認済みマッチングから提案を作成した場合に紐づける
 - 承認/見送りの操作は**メンバー詳細（要員詳細）のマッチングタブ**に置く。マッチング一覧は閲覧・絞り込み専用
 - 提案は承認と同時に自動作成しない。「提案を作成」ボタンで作成し、**承認済み＆提案未作成**はバッジ表示・絞り込み可能にする
