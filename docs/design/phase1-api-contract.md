@@ -106,6 +106,10 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
     **WARNING＋理由「条件付き可（要営業確認）」**（2026-08-18 上流同意済みでOK/NG二値から変更）。それ以外はOK
   - `nationality`: 案件が外国籍不可 × 要員が外国籍 → NG。それ以外はOK
   - `freelancer`: 案件が個人事業主不可 × 要員が個人事業主 → NG。それ以外はOK
+  - 要求年数のバックフィル: `POST /ses/mail-import/skill-years-backfill`（管理者のみ・同期実行）。
+    ボディ `{"all": true}` で全案件、未指定なら required_years が全てNULLの案件のみを対象に、
+    元メール本文から年数のみを軽量再抽出して既存タグ行の required_years を更新する
+    （行の追加・削除なし。手動登録案件=元メールなしは対象外）
   - `skillYears`: 一致スキルのうち、案件側に要求年数（`project_skills.required_years`。取込時にLLM抽出=prompt v4）が
     あり、要員の経験年数が不足するものが1つでもあれば **WARNING**（軸として1件。複数スキル不足でもWARNINGは1つ）。
     理由に不足スキルを列挙（例「Java: 要求5年 / 要員3年」）。要員側の年数未登録・案件側の要求年数なしは判定対象外
