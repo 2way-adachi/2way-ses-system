@@ -137,6 +137,15 @@ POST  /ses/proposals                     { projectId, personnelId, proposalText?
 PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?, lostReason?, memo? }
 ```
 
+- GETの各行に `destinationName` / `destinationEmail`（string | null）を含める（2026-08-18 人間指示）:
+  案件の元メール（projects.mail_id→mails）の送信元から導出した提案先の会社表示名とアドレス。
+  手動登録案件（元メールなし）はnull。DBに専用カラムは持たない
+- 提案管理一覧はカード型レイアウト（2026-08-18 人間指示）: 提案1件=カード1枚。
+  上部に進捗ステッパー6段（提案メール作成中→提案メール送信済み→面談→先方返信待ち→完了→見送り。
+  **取下げは見送り位置まで進めて表示、完了(won)は5段目で止める**）、
+  左に提案情報（提案先・宛先・面談回数・現在ステータス・次回アクション日）、
+  右に更新フォーム（ステータス・次回アクション日・メモ・更新ボタン）
+
 ```json
 { "id": 1, "projectId": 3, "personnel": { "id": 1, "name": "..." },
   "status": "draft", "proposalText": "", "matchSnapshot": { "score": 0.72, "matchedSkills": ["Java"] },
