@@ -69,7 +69,8 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
       "startDate": { "status": "OK", "reason": "案件開始9/1 / 要員参画可能9/1" },
       "nationality": { "status": "OK", "reason": "案件は外国籍可" },
       "age": { "status": "WARNING", "reason": "案件40歳まで / 要員42歳" },
-      "commercialFlow": { "status": "OK", "reason": "案件はBP可 / 要員はBP" }
+      "commercialFlow": { "status": "OK", "reason": "案件はBP可 / 要員はBP" },
+      "freelancer": { "status": "OK", "reason": "判定材料なし（案件側の記載なし）" }
     },
     "reason": null } ] }
 ```
@@ -78,10 +79,27 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
   - 必須スキル一致率 = 一致した必須スキル数 / 必須スキル総数
   - 尚可スキル一致率 = 一致した尚可スキル数 / 尚可スキル総数
   - `skillScore = 必須スキル一致率 * 0.8 + 尚可スキル一致率 * 0.2`
-- 条件適合は `conditionChecks` に項目別の判定と理由を保持する
-  - `price` / `workStyle` / `startDate` / `age`: `OK` / `WARNING` / `NG`
-  - `nationality` / `commercialFlow`: `OK` / `NG`
+  - 片側の総数が0件の場合はもう片方の一致率をそのまま `skillScore` とする
+    （尚可0件なら必須一致率×1.0、必須0件なら尚可一致率×1.0。両方0件は0）
+- 条件適合は `conditionChecks` に項目別の判定と理由を保持する（7軸。2026-08-18 決定#25）
+  - `price` / `workStyle` / `startDate` / `age` / `commercialFlow`: `OK` / `WARNING` / `NG`
+  - `nationality` / `freelancer`（個人事業主）: `OK` / `NG`
   - `location` は初期版では自動判定せず、案件側の場所と要員側の希望エリアを画面表示して営業担当が判断する
+- 各軸の境界（2026-08-18 決定#25。判定に必要な値が片方でもnullの軸は **OK＋理由「判定材料なし」**）
+  - `price`: レンジが重なればOK。重ならない場合、乖離が**5万円以内**ならWARNING、超えたらNG
+    （要員希望が案件レンジより安い方向は常にOK）
+  - `startDate`: 要員の稼働可能時期 ≦ 案件開始でOK。遅れ**1ヶ月以内**はWARNING、超えたらNG
+    （要員が早く空く方向は常にOK）
+  - `age`: 案件上限以下でOK。超過**5歳以内**はWARNING、超えたらNG
+  - `workStyle`（案件 `remoteType` × 要員 `remotePreference`）:
+    - 案件フルリモート → 常にOK
+    - 案件常駐 × 要員フルリモート希望 → NG／要員週1〜3希望 → WARNING／出社のみ可 → OK
+    - 案件併用 × 要員フルリモート希望 → WARNING（出社日数が案件側で不明のため）／それ以外 → OK
+    - 案件不明 → OK
+  - `commercialFlow`: NGは own_only × BP のみ。own_plus_support（条件付き可）× BP は
+    **WARNING＋理由「条件付き可（要営業確認）」**（2026-08-18 上流同意済みでOK/NG二値から変更）。それ以外はOK
+  - `nationality`: 案件が外国籍不可 × 要員が外国籍 → NG。それ以外はOK
+  - `freelancer`: 案件が個人事業主不可 × 要員が個人事業主 → NG。それ以外はOK
 - 条件適合に `NG` が1件でも含まれる場合はマッチング対象外とし、候補一覧には返さない
 - `NG` がない場合、`WARNING` 件数に応じて `conditionFactor` を決め、総合点 `score` を算出する
   - `WARNING` 0件: `conditionFactor = 1.00`
