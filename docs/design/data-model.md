@@ -230,6 +230,7 @@ MVP向けの論理データモデルを整理する。
 - original_body
 - required_skills_text
 - location
+- region
 - unit_price_min
 - unit_price_max
 - start_date
@@ -247,7 +248,8 @@ MVP向けの論理データモデルを整理する。
 
 - `source_mail_id` を重複登録防止のキーとして利用する想定
 - `required_skills_text` は抽出元の文字列を保持し、マッチングで比較に利用する
-- `location` は初期版では自動判定対象にせず、表示・営業判断用として保持する
+- `location` は原文を保持し表示・営業判断に使う。あわせて正規化した地方コードを `region` に保持し、
+  マッチングの `location` 軸で判定に利用する（2026-08-19 決定#34。詳細は [location軸 設計](matching-location-axis.md)）
 - `nationality_allowed` は外国籍可否、`age_limit` は年齢条件、`commercial_flow` は社員のみ/BP可などの商流条件としてマッチング判定に利用する
 
 ### 3.2 staff_candidates

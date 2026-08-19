@@ -82,11 +82,11 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
   - `skillScore = 必須スキル一致率 * 0.8 + 尚可スキル一致率 * 0.2`
   - 片側の総数が0件の場合はもう片方の一致率をそのまま `skillScore` とする
     （尚可0件なら必須一致率×1.0、必須0件なら尚可一致率×1.0。両方0件は0）
-- 条件適合は `conditionChecks` に項目別の判定と理由を保持する（8軸。2026-08-18 決定#25・#26）
+- 条件適合は `conditionChecks` に項目別の判定と理由を保持する（9軸。2026-08-18 決定#25・#26／2026-08-19 決定#34）
   - `price` / `workStyle` / `startDate` / `age` / `commercialFlow`: `OK` / `WARNING` / `NG`
   - `nationality` / `freelancer`（個人事業主）: `OK` / `NG`
   - `skillYears`（経験年数）: `OK` / `WARNING`（**NGなし**。2026-08-18 決定#26）
-  - `location` は初期版では自動判定せず、案件側の場所と要員側の希望エリアを画面表示して営業担当が判断する
+  - `location`（勤務地の地方）: `OK` / `WARNING` / `NG`（2026-08-19 決定#34。それ以前は自動判定なしだった）
 - 各軸の境界（2026-08-18 決定#25。判定に必要な値が片方でもnullの軸は **OK＋理由「判定材料なし」**）
   - `price`: レンジが重なればOK。重ならない場合、乖離が**5万円以内**ならWARNING、超えたらNG
     （要員希望が案件レンジより安い方向は常にOK）。
@@ -110,11 +110,28 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
     ボディ `{"all": true}` で全案件、未指定なら required_years が全てNULLの案件のみを対象に、
     元メール本文から年数のみを軽量再抽出して既存タグ行の required_years を更新する
     （行の追加・削除なし。手動登録案件=元メールなしは対象外）
+  - **運用注意（2026-08-20 実測）**: `relink`（全件再照合）は required_years を
+    「原文照合で同じ (project_id, skill_id) を再現できた行」だけに引き継ぐため、
+    表記ゆれ等で再現できない行の年数は失われる（実測 141件→122件）。
+    **relink実行後は skill-years-backfill を続けて流す**のを標準手順とする
   - `skillYears`: 一致スキルのうち、案件側に要求年数（`project_skills.required_years`。取込時にLLM抽出=prompt v4）が
     あり、要員の経験年数が不足するものが1つでもあれば **WARNING**（軸として1件。複数スキル不足でもWARNINGは1つ）。
     理由に不足スキルを列挙（例「Java: 要求5年 / 要員3年」）。要員側の年数未登録・案件側の要求年数なしは判定対象外
     （すべて対象外ならOK＋「判定材料なし」）。**NGにはしない**（「目安」「〜程度」表現が多く、
     ハード足切りは実態より厳しくなるため。精度検証は skill-years-extraction-verification.md）
+  - `location`: 案件の勤務地と要員の所在地を**8地方区分**（北海道/東北/関東/中部/関西/中国/四国/九州沖縄）に
+    正規化して突き合わせる。上から評価し最初に該当した行で確定する:
+    ①`location` に否定キーワード（`地方不可` 等）→ 地方一致必須・不一致はNG ／ ②案件フルリモート（`remote_type=0`）→ OK ／
+    ③案件併用かつ低頻度出社キーワード（`基本リモート` 等）→ 不一致ならWARNING ／ ④どちらかの地方が特定できない → OK＋「判定材料なし」 ／
+    ⑤一致 → OK ／ ⑥不一致 → NG。
+    要員側の解決順はメンバーが `prefecture`→`preferredLocation`→`nearestStation`、要員候補は `nearestStation` のみ。
+    複数地名の併記（`六本木一丁目駅or金沢駅`）はいずれか一致でOK。同名地名（本町・府中・大手町・淡路）は
+    辞書から除外し「判定材料なし」に倒す（詳細は [location軸 設計](matching-location-axis.md)）。
+    結果画面の対比（conditionComparison）でのハイライト側は **project**（勤務地は案件側の条件なので
+    `workStyle` と同じ扱い。2026-08-20 実装と突き合わせて確定）
+- **重複件数の表示（G1）**: 案件行を返すAPI（案件メール一覧・マッチング一覧・適合案件）は
+  `duplicateCount`（int。**グループ内の総件数=代表自身を含む**。グループ未判定・単独は1）を含める。
+  フロントは2以上で「重複N件」バッジ表示（2026-08-20 フィールド名確定）
 - 条件適合に `NG` が1件でも含まれる場合はマッチング対象外とし、候補一覧には返さない
 - `NG` がない場合、`WARNING` 件数に応じて `conditionFactor` を決め、総合点 `score` を算出する
   - `WARNING` 0件: `conditionFactor = 1.00`
@@ -124,7 +141,7 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
   - `score = skillScore * conditionFactor`
 - `matchedSkills` は決定#22-Aにより `{name, years|null}` 構造（要員の経験年数を併記。missingSkillsは名前配列のまま）
 - 場所の参考表示用に、候補側refは要員の `nearestStation`・`preferredLocation` を、適合案件側refは案件の
-  `location` を含める（自動判定はしない。営業判断材料としての並記用）
+  `location` を含める（`location` 軸の判定結果とは別に、営業判断材料として原文を並記するため）
 - `reason` は **Phase 2（LLM）用の席**。Phase 1では常にnull。フロントはnull時に非表示
 - レスポンス形状（2026-08-07 確定）: `/projects/{id}/candidates` は `{ "candidates": [...] }`、
   `/personnel/{id}/matches` は `{ "matches": [...] }`（中身の行構造は同一）
@@ -200,8 +217,13 @@ GET /ses/skills?q=                       タグ入力のサジェスト用（ali
   （フレーム内スクロール。各行=送信元会社名・メールアドレス・件名・受信日＋該当案件メール詳細への
   リンク＋**提案ボタン**=どのメール経由で提案するかの選択）。フレーム外下に**見送りボタン**（案件基点）。
   承認は3段階（確認中→承認済み→提案）を維持し、**承認ボタンも結果画面に配置**
-- **同一案件のグルーピングは自動判定を精度検証後に導入**（Phase 2。タイトル類似・スキル集合等の
-  ヒューリスティックを実メールで検証してから基準確定）。それまで右側は案件の元メール1件のみ表示
+- **同一案件のグルーピングを実装**（2026-08-20。決定#30・G1）: タイトル正規化一致＋勤務地トークン交差
+  （どちらか空はスキップ）＋単価レンジ1.15倍未満で判定し、`projects.group_id`/`matchings.group_id` に永続化。
+  グループ代表（受信最新のもの）とのみ照合する。取込時＋手動更新時に付与、既存分は
+  `POST /ses/projects/group-backfill` でバックフィル（対象=group_id未設定。受信の古い順に処理）。
+  承認・見送り（`POST /ses/matchings/decision`）はgroup_id×(personnelIdまたはstaffCandidateId)を実質キーとして
+  同一グループ内で引き継ぐ（project_idは「どの案件を見て判断したか」の記録として残すのみ）。
+  マッチング一覧・適合案件の評価母集団はグループ代表のみに絞る（重複件数は`duplicateCount`。上記参照）
 
 ```
 GET /ses/matching-result?projectId=&personnelId=
@@ -230,7 +252,8 @@ GET /ses/matching-result?projectId=&personnelId=
   highlight=「基準を満たさない値を持つ側」: 単価・稼働形態=案件側／開始時期・年齢・商流・
   外国籍・個人事業主・経験年数=要員側（例: 案件単価が要員希望に届かない→案件側△ハイライト）。
   値が無い側は「-」・status=OK（判定材料なし）でハイライトなし
-- `mails`: Phase 1では案件の元メール1件（手動登録案件は空配列）。Phase 2でグループ内の全メール
+- `mails`: 同一案件グループ内の全メール（2026-08-20実装。未グルーピングの案件は自分の元メール1件のみ。
+  手動登録案件は空配列）。受信日時の新しい順
 
 ```
 POST /ses/proposals  { projectId, personnelId, proposalText?, viaMailId? }   ※viaMailId追加（2026-08-19）
