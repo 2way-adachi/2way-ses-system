@@ -240,6 +240,41 @@ POST /ses/proposals  { projectId, personnelId, proposalText?, viaMailId? }   ※
   `proposals.via_mail_id`（NULL可）に保存し、**提案先（destinationName/Email）の導出は
   via_mail_id優先**（無ければ従来どおりprojects.mail_id）
 
+## 要員候補のマッチング参加と昇格（2026-08-19 決定#31）
+
+メール由来の要員候補（staff_candidates。メンバー未昇格のBP）もマッチング対象に加える。
+
+- **タグ付け**: `staff_candidate_skills` 新設（skills_textのマスタ照合。取込時タグ付け＋既存分バックフィル＋
+  relink時の再構築対象）。候補側の判定材料: 単価・稼働開始時期・年齢（直接保持値）・商流/個人事業主
+  （affiliationから導出）。稼働形態・外国籍・経験年数は判定材料なし扱い
+- **一覧・案件詳細候補**: メンバー行と候補行を統合表示。行は `personnel` または `staffCandidate`
+  （`{id, nameInitial, affiliation}`）のどちらか一方を持つ。候補行は氏名列=イニシャル＋候補badge、
+  **昇格ボタン**＋見送りボタン
+- **matchings拡張**: `staff_candidate_id`（NULL可）追加・`personnel_id` NULL可化（どちらか一方必須・
+  UNIQUE(project_id, staff_candidate_id)）。`POST /ses/matchings/decision` は `personnelId` または
+  `staffCandidateId` のどちらかを受ける
+- **昇格API**: `POST /ses/staff-candidates/{id}/promote` → `{ "personnelId": n }`。
+  イニシャルを名前として自動でpersonnel作成（name=name_initial・gender・単価・稼働時期→available_from・
+  最寄駅・BP区分・affiliationが個人事業主なら freelancer=1）、タグを personnel_skills へコピー（年数NULL）、
+  `staff_candidates.personnel_id`（新設）にリンク、候補のmatchings行をpersonnel側へ付け替え。
+  昇格済みの再実行は既存personnelIdを200で返す（冪等）。昇格済み候補はマッチングの候補側から除外
+  （以後はメンバーとして評価される）
+- **結果画面**: `GET /ses/matching-result` は `personnelId` または `staffCandidateId` のどちらかを指定。
+  候補ペアの応答は `personnel` の代わりに `staffCandidate` ノード。**提案ボタン押下時、候補ペアは
+  自動昇格→提案作成**（フロントが promote→POST /ses/proposals を連続実行）
+
+### マッチングの性能規定（2026-08-19 決定#31）
+
+- **共通スキル前置フィルタ**: 評価対象ペアは共通スキル1件以上のものにSQL段で絞る
+  （共通スキル0＝0点のペアは一覧・候補・適合案件に表示されなくなる。承認/見送り済みの組は
+  末尾保証で従来どおり残る）
+- **鮮度フィルタ**: マッチング評価対象のopen案件は「開始時期が過去でない（start_ym IS NULL または
+  当月以降）」かつ「元メール受信から1ヶ月以内（手動登録案件=元メールなしは常に対象）」に限定。
+  対象外案件も表示・検索・結果画面の直接参照は可能
+- **一覧キャッシュ**: マッチング一覧の評価結果はサーバ内キャッシュ（取込run完了・relink・
+  スキルマスタ操作・案件/メンバー/候補の更新・昇格で無効化＋TTL保険。承認/見送り等の状態は
+  キャッシュ対象外で都度合成）
+
 ## その他の実装済みエンドポイント（2026-08-19契約追記）
 
 ```
