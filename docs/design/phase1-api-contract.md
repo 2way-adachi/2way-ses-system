@@ -190,6 +190,56 @@ GET /ses/skills?q=                       タグ入力のサジェスト用（ali
 - マスタ未登録の語は unknown_terms に蓄積し、スキルマスタ画面の**「登録待ちスキル」タブ**
   （旧称: 未知語トリアージ。2026-08-18改名）で 登録/別名/対象外 の3択で判断する
 
+## マッチング結果画面（2026-08-19 決定#30）
+
+マッチングの確認・操作の中心を新設の「マッチング結果画面」に移す。
+
+- **一覧2箇所**（メンバー詳細のマッチングタブ／マッチング一覧）は縦リストで列=
+  案件名・点数・一致スキル・不足スキル・ステータス・**見送りボタン**。行クリックで結果画面へ遷移
+- **結果画面の構成**: 左=案件×要員の**対比表**（下記API）。右=この案件の重複メール縦リスト
+  （フレーム内スクロール。各行=送信元会社名・メールアドレス・件名・受信日＋該当案件メール詳細への
+  リンク＋**提案ボタン**=どのメール経由で提案するかの選択）。フレーム外下に**見送りボタン**（案件基点）。
+  承認は3段階（確認中→承認済み→提案）を維持し、**承認ボタンも結果画面に配置**
+- **同一案件のグルーピングは自動判定を精度検証後に導入**（Phase 2。タイトル類似・スキル集合等の
+  ヒューリスティックを実メールで検証してから基準確定）。それまで右側は案件の元メール1件のみ表示
+
+```
+GET /ses/matching-result?projectId=&personnelId=
+```
+
+```json
+{ "project": { "id": 1, "title": "...", "location": "..." },
+  "personnel": { "id": 1, "name": "..." },
+  "matching": { "status": "approved", "rejectReason": null, "memo": null },
+  "hasProposal": false,
+  "score": 0.72, "skillScore": 0.8, "conditionFactor": 0.9,
+  "skillComparison": [
+    { "skillName": "Java", "required": true, "requiredYears": 5,
+      "personnelHas": true, "personnelYears": 3, "verdict": "warn", "highlight": "personnel" } ],
+  "conditionComparison": [
+    { "axis": "price", "projectValue": "〜55万円", "personnelValue": "45〜55万円",
+      "status": "OK", "highlight": null, "reason": "..." } ],
+  "mails": [ { "mailId": 137, "projectId": 1, "senderName": "...", "senderAddress": "...",
+               "subject": "...", "receivedAt": "2026-08-18 09:00" } ] }
+```
+
+- `skillComparison`: 案件スキル（必須+尚可）ごとに要員側の充足を対比。
+  verdict= `ok`（一致・年数充足or要求なし）/ `warn`（一致だが要求年数に不足→**要員側ハイライト**）/
+  `ng`（要員に該当スキルなし）。判定は既存のスキル評価・skillYears軸と同一ロジック
+- `conditionComparison`: 条件8軸ごとに案件側・要員側の**生値（表示文字列）**と判定を対比。
+  highlight=「基準を満たさない値を持つ側」: 単価・稼働形態=案件側／開始時期・年齢・商流・
+  外国籍・個人事業主・経験年数=要員側（例: 案件単価が要員希望に届かない→案件側△ハイライト）。
+  値が無い側は「-」・status=OK（判定材料なし）でハイライトなし
+- `mails`: Phase 1では案件の元メール1件（手動登録案件は空配列）。Phase 2でグループ内の全メール
+
+```
+POST /ses/proposals  { projectId, personnelId, proposalText?, viaMailId? }   ※viaMailId追加（2026-08-19）
+```
+
+- `viaMailId`: どのメール経由で提案するかの選択（結果画面の提案ボタン）。省略時は案件の元メール。
+  `proposals.via_mail_id`（NULL可）に保存し、**提案先（destinationName/Email）の導出は
+  via_mail_id優先**（無ければ従来どおりprojects.mail_id）
+
 ## その他の実装済みエンドポイント（2026-08-19契約追記）
 
 ```
