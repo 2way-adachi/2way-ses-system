@@ -134,7 +134,8 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
 ```
 GET   /ses/proposals?projectId=&personnelId=&status=&includeDone=   ※レスポンスは配列直返し（2026-08-07 確定）
 POST  /ses/proposals                     { projectId, personnelId, proposalText? }
-PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?, lostReason?, memo? }
+PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?, interviewDoneCount?,
+                                           nextActionDate?, lostReason?, memo? }
 ```
 
 - GETの各行に `destinationName` / `destinationEmail`（string | null）を含める（2026-08-18 人間指示）:
@@ -163,7 +164,8 @@ PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?,
 - **includeDone**（2026-08-10 追加）: 未指定/falseなら進行中（won/lost/withdrawn以外）のみ返す。
   `includeDone=true` で全件返す。`status` を明示指定した場合はそのstatusのみ（includeDoneより優先）
 - **PATCHの明示null**（2026-08-10 確定）: フィールドが**JSONに存在しない**=更新しない、
-  **明示的に null**=クリア（DBをNULLに更新）。対象は interviewAt / lostReason / memo。
+  **明示的に null**=クリア（DBをNULLに更新）。対象は interviewAt / nextActionDate / lostReason / memo
+  （interviewDoneCount・nextActionDateは2026-08-17の提案改修で追加。2026-08-19契約追記）。
   フロントは面談日時入力を空にしたら `interviewAt: null` を送る
 - 提案一覧のユースケース（2026-08-07 人間イメージ）: **「今どこの案件に誰が提案中で、いつ面談で、
   ステータスがどうか」を横断で一覧できること**。一覧のデフォルトは進行中（won/lost/withdrawn以外）を
@@ -176,6 +178,35 @@ PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?,
 GET /ses/skills?q=                       タグ入力のサジェスト用（alias込みで検索）
 ```
 
-- 登録・エイリアス管理APIはPhase 1では作らない（シードSQLで投入、追加はSQL運用）
+- ~~登録・エイリアス管理APIはPhase 1では作らない~~ → **育成画面（A2）実装により方針変更（2026-08-18実装・2026-08-19契約追記）**:
+  ```
+  GET  /ses/skill-master/unknown-terms?status=   登録待ちスキル一覧（頻度順）
+  GET  /ses/skill-master/unknown-terms/{id}      判断材料つき詳細
+  POST /ses/skill-master/decision                登録/別名/却下/差し戻しの判断（該当案件へ自動再紐付け）
+  POST /ses/skill-master/merge                   スキル統合（マージ。破壊的操作・対象ID必須）
+  POST /ses/skill-master/relink                  全件再照合（全消し再構築。required_years引き継ぎ）
+  GET  /ses/skill-master/skills                  マスタ一覧
+  ```
 - マスタ未登録の語は unknown_terms に蓄積し、スキルマスタ画面の**「登録待ちスキル」タブ**
   （旧称: 未知語トリアージ。2026-08-18改名）で 登録/別名/対象外 の3択で判断する
+
+## その他の実装済みエンドポイント（2026-08-19契約追記）
+
+```
+GET  /ses/matchings?status=                マッチング一覧（閲覧専用。候補行+承認状態+提案有無の合成、上限200行）
+POST /ses/matchings/decision               承認/見送り/確認中に戻す { projectId, personnelId, status, rejectReason?, memo? }
+GET  /ses/staff-candidates?…               要員候補（メール由来）一覧・PUT /ses/staff-candidates/{id} 更新（確認/非表示）
+GET  /ses/mails/{id}                       メール原文参照（一般ロールはkind=案件のみ）
+POST /ses/mail-import/run                  取込の手動実行（202+running。実行中は400）
+GET  /ses/mail-import/runs                 取込履歴（実行ヘッダ+アカウント別明細の2階層）
+```
+
+## エラー応答の規定（/ses/** 共通。2026-08-19 決定#29で確定）
+
+- **バリデーション違反（必須欠落等）・未知のenum文字列**: **400・空ボディ**（詳細はサーバログ）。
+  未知enum文字列は検索パラメータ・更新ボディを問わず**一律400**（サイレント無視・絞り込み解除・
+  サービス委譲だった実装のばらつきを統一。理由: フロントは固定選択肢のみ送るため、未知値=バグか手打ち。
+  黙って通すと「更新した/絞り込めたつもり」の事故になる）
+- **対象が存在しない（ID不一致等）**: 404・空ボディ
+- **その他の業務エラー（サービス層のエラーコード）**: 400・空ボディ（manage-user系など既存の
+  個別コード規約を持つAPIはそちらが優先）
