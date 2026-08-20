@@ -329,6 +329,65 @@ POST /ses/mail-import/run                  取込の手動実行（202+running�
 GET  /ses/mail-import/runs                 取込履歴（実行ヘッダ+アカウント別明細の2階層）
 ```
 
+## 一覧の絞り込み拡張（2026-08-20 決定#42・#40）
+
+3画面（案件メール一覧・要員メール一覧・マッチング一覧）の絞り込みをサーバー側で拡張する。
+**判定材料（単価・年齢・開始時期等）がNULLのレコードは、各絞り込みで除外せず通す**方針で統一する
+（location軸の「どちらかの地方が特定できない→OK」と同じ考え方。誤って除外すると一覧から消えて
+人間が気付けないため）。`q`（フリーワード）と個別項目の絞り込みは**AND結合**（`q`自体は内部的に
+対象カラムのOR）。未知のenum文字列は他APIと同じく一律400（決定#29）。
+
+### GET /ses/projects（案件メール一覧。J3）
+
+| パラメータ | 型 | 意味 |
+|---|---|---|
+| `q` | string | `title`/`description`/`requiredSkillsText`/`preferredSkillsText`/`location`のいずれかに部分一致（従来は`title`のみ） |
+| `status` | string | 既存（open/closed） |
+| `location` | string | `location`の部分一致 |
+| `requiredSkills` | string | `requiredSkillsText`の部分一致 |
+| `unitPriceMin` | number(万円/月) | この額以上。`unitPriceMax >= v`。`unitPriceMax`がNULLの案件は通す |
+| `unitPriceMax` | number(万円/月) | この額以下。`unitPriceMin <= v`。`unitPriceMin`がNULLの案件は通す |
+| `startYmFrom` | string(yyyy-MM) | 指定月の1日以降。`startYm`がNULLの案件は通す |
+| `startYmTo` | string(yyyy-MM) | 指定月の1日以前。`startYm`がNULLの案件は通す |
+| `remoteType` | string | 完全一致。`remoteType`がNULLの案件は通す |
+| `flowLimit` | string | 完全一致。`flowLimit`がNULLの案件は通す |
+| `freelancerAllowed` | boolean | 完全一致。`freelancerAllowed`がNULLの案件は通す |
+| `foreignNationalAllowed` | boolean | 完全一致。`foreignNationalAllowed`がNULLの案件は通す |
+
+`startYmFrom`/`startYmTo`の書式が不正な場合は400・空ボディ。
+
+### GET /ses/staff-candidates（要員メール一覧。J4・H7）
+
+| パラメータ | 型 | 意味 |
+|---|---|---|
+| `q` | string | 既存（`nameInitial`/`skillsText`/`affiliation`/`nearestStation`のOR。変更なし） |
+| `status` | string | 既存（変更なし） |
+| `promoted` | boolean | true=昇格済み(personnelId有)のみ／false=未昇格(personnelId無)のみ／未指定=両方 |
+| `affiliation` | string | 部分一致 |
+| `nearestStation` | string | 部分一致 |
+| `skills` | string | `skillsText`の部分一致 |
+| `ageMin` / `ageMax` | number | 年齢の範囲。`age`がNULLの候補は通す |
+| `unitPriceMin` / `unitPriceMax` | number(万円/月) | 案件側と同じ考え方（`unitPriceMax >= min` / `unitPriceMin <= max`）。NULLは通す |
+| `startYmFrom` / `startYmTo` | string(yyyy-MM) | `startYm`の範囲。NULLは通す |
+| `duplicated` | boolean | true=名寄せグループの件数が2件以上／false=単独(1件)／未指定=両方 |
+
+レスポンスに`duplicateCount`（同一名寄せグループ内の総件数。代表自身を含む。グループ未判定・単独候補は1）を
+追加する（H7・決定#40。**案件メール一覧と同じく一覧は畳まず全件表示**したうえで2以上に「重複N件」を表示する
+用途）。`startYmFrom`/`startYmTo`の書式が不正な場合は400・空ボディ。
+
+### GET /ses/matchings（マッチング一覧。J5）
+
+| パラメータ | 型 | 意味 |
+|---|---|---|
+| `status` / `unproposedOnly` | 既存 | 変更なし |
+| `projectTitle` | string | 案件名の部分一致 |
+| `personName` | string | メンバー名または候補イニシャルのいずれかに部分一致すればヒット |
+| `scoreMin` | number(0〜100の整数) | 総合点の下限。`formatMatchingScore`と同じ0〜100点の整数スケールで指定する（内部は0〜1の小数のため、比較は表示と同じ`Math.round(score * 100)`で丸めてから行う。生の100倍値のまま比較すると浮動小数の丸め誤差で境界値が漏れることがあるため。2026-08-20 人間指示で確定）。計算対象から外れた(score無し)組は指定時に除外される |
+| `subjectType` | string | `personnel`=メンバーのみ／`staffCandidate`=要員候補のみ／未指定=両方 |
+
+いずれもマッチング一覧のサーバ内キャッシュ（評価結果）の**後段フィルタ**として適用するため、
+絞り込み条件を変えてもキャッシュキー・キャッシュの効きには影響しない。
+
 ## エラー応答の規定（/ses/** 共通。2026-08-19 決定#29で確定）
 
 - **バリデーション違反（必須欠落等）・未知のenum文字列**: **400・空ボディ**（詳細はサーバログ）。
