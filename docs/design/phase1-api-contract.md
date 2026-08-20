@@ -242,7 +242,9 @@ GET /ses/matching-result?projectId=&personnelId=
     { "axis": "price", "projectValue": "〜55万円", "personnelValue": "45〜55万円",
       "status": "OK", "highlight": null, "reason": "..." } ],
   "mails": [ { "mailId": 137, "projectId": 1, "senderName": "...", "senderAddress": "...",
-               "subject": "...", "receivedAt": "2026-08-18 09:00" } ] }
+               "subject": "...", "receivedAt": "2026-08-18 09:00" } ],
+  "staffMails": [ { "mailId": 212, "staffCandidateId": 9, "senderName": "...", "senderAddress": "...",
+                     "subject": "...", "receivedAt": "2026-08-19 10:00" } ] }
 ```
 
 - `skillComparison`: 案件スキル（必須+尚可）ごとに要員側の充足を対比。
@@ -252,16 +254,34 @@ GET /ses/matching-result?projectId=&personnelId=
   highlight=「基準を満たさない値を持つ側」: 単価・稼働形態=案件側／開始時期・年齢・商流・
   外国籍・個人事業主・経験年数=要員側（例: 案件単価が要員希望に届かない→案件側△ハイライト）。
   値が無い側は「-」・status=OK（判定材料なし）でハイライトなし
+- `hasProposal`: **進行中の提案があるときだけtrue**（2026-08-20 人間指示で定義変更。
+  進行中=won/lost/withdrawn以外。提案一覧`includeDone`と同じ線引き）。完了・見送り・取下げ後は
+  falseに戻り再提案できる。以前はステータスを問わず提案の有無だけを見ていたため、一度提案すると
+  見送られた後も同一案件×同一要員に二度と提案できない不具合があった。阻止したいのは
+  「同一案件×同一要員の進行中の二重提案」のみ。候補（staffCandidate）ペアのhasProposalは
+  従来どおり常にfalse（提案は候補の昇格後のみ可能なため）
 - `mails`: 同一案件グループ内の全メール（2026-08-20実装。未グルーピングの案件は自分の元メール1件のみ。
   手動登録案件は空配列）。受信日時の新しい順
+- `staffMails`: 同一要員名寄せグループ内の全メール（2026-08-20実装。`staff_candidates.group_id`使用。
+  案件側`mails`と対称の位置づけ）。**候補（staffCandidate）ペアのときのみ中身を返し、
+  メンバー（personnel）ペアは常に空配列**（メンバーはメール由来ではないため）。
+  未グルーピングの候補は自分の元メール1件のみ。受信日時の新しい順。フロントは
+  `/staff-mail/{staffCandidateId}` へリンクする。結果画面は右カラム上下2フレーム
+  （上=案件メール`mails`／下=要員メール`staffMails`）で、いずれも単一選択（ラジオ相当）。
+  フレーム外の提案ボタンは両方選択されて初めて活性
 
 ```
-POST /ses/proposals  { projectId, personnelId, proposalText?, viaMailId? }   ※viaMailId追加（2026-08-19）
+POST /ses/proposals  { projectId, personnelId, proposalText?, viaMailId?, viaStaffMailId? }
+※viaMailId追加（2026-08-19）・viaStaffMailId追加（2026-08-20）
 ```
 
-- `viaMailId`: どのメール経由で提案するかの選択（結果画面の提案ボタン）。省略時は案件の元メール。
+- `viaMailId`: どのメール経由で提案するかの選択（結果画面の案件メールフレーム）。省略時は案件の元メール。
   `proposals.via_mail_id`（NULL可）に保存し、**提案先（destinationName/Email）の導出は
   via_mail_id優先**（無ければ従来どおりprojects.mail_id）
+- `viaStaffMailId`: 結果画面の要員メールフレームでどのメール経由で提案するかを選択した場合のみ指定する
+  （2026-08-20実装）。`proposals.via_staff_mail_id`（NULL可）に**記録するのみ**で、
+  **提案先（destinationName/Email）の導出ロジックは変更しない**（viaMailIdは使わず常に無視。
+  従来どおりvia_mail_id優先→projects.mail_id）。存在しないメールIDは400（エラーコード3）
 
 ## 要員候補のマッチング参加と昇格（2026-08-19 決定#31）
 
