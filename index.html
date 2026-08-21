@@ -103,6 +103,9 @@ main{padding:1.25rem 1.75rem 4rem;min-width:0}
 
 /* ---------- filter bar ---------- */
 .filters{display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end}
+.detail-filter{margin-top:.65rem;padding-top:.85rem;border-top:1px solid var(--border)}
+.detail-filter-grid{display:grid;grid-template-columns:repeat(4,minmax(145px,1fr));gap:.75rem}
+.filter-toggle{margin-top:.6rem}
 .field{display:flex;flex-direction:column;gap:.25rem;min-width:0}
 .field label{font-size:11.5px;color:var(--fg-muted);font-weight:600}
 .ctl{
@@ -204,6 +207,14 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
 .empty{padding:2.5rem 1rem;text-align:center;color:var(--fg-muted);font-size:13px}
 .pager{display:flex;align-items:center;gap:.5rem;padding:.7rem 1.1rem;font-size:12.5px;color:var(--fg-muted);border-top:1px solid var(--border)}
 .pager .spacer{flex:1}
+.pager select{min-width:76px}
+.mail-frame{border:1px solid var(--border);border-radius:4px;background:#fff;margin-bottom:16px;overflow:hidden}
+.mail-frame-title{padding:10px 14px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600}
+.mail-frame-scroll{max-height:300px;overflow:auto;padding:8px}
+.mail-choice{display:grid;grid-template-columns:24px 1fr;gap:8px;padding:10px;border-radius:4px;cursor:pointer}
+.mail-choice:hover,.mail-choice.selected{background:rgba(63,81,181,.08)}
+.mail-subject{word-break:break-word;margin:4px 0}
+.duplicate-badge{margin-left:4px}
 .pre{white-space:pre-wrap;font-size:13px;line-height:1.85;margin:0}
 
 .toast{
@@ -267,7 +278,9 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
   .ses-head{display:none}
   .mail-detail-grid{grid-template-columns:1fr !important}
   .proposal-detail-grid{grid-template-columns:1fr}
+  .detail-filter-grid{grid-template-columns:repeat(2,minmax(145px,1fr))}
 }
+@media (max-width:620px){.detail-filter-grid{grid-template-columns:1fr}}
 @media (max-width:700px){.proposal-stepper{grid-template-columns:1fr}.proposal-step{padding:8px 8px 8px 38px;text-align:left}.proposal-step:before{display:none}.proposal-step .circle{left:14px;top:4px;transform:none}}
 @media (max-width:860px){
   .shell{grid-template-columns:1fr}
@@ -383,7 +396,8 @@ table.tbl tbody tr:hover,.ses-row:hover{background:rgba(63,81,181,.08)}
     <a class="item" href="#" data-nav="matching"><span class="ico">⇄</span>マッチング一覧</a>
     <a class="item" href="#" data-nav="proposal"><span class="ico">✓</span>提案管理一覧</a>
     <a class="item" href="#" data-nav="skill-master"><span class="ico">◇</span>スキルマスタ</a>
-    <a class="item disabled" href="#"><span class="ico">♙</span>管理ユーザー</a>
+    <div class="grp">管理</div>
+    <a class="item disabled" href="#"><span class="ico">♙</span>ユーザー管理</a>
     <a class="item disabled" href="#"><span class="ico">↪</span>ログアウト</a>
   </nav>
 
@@ -536,17 +550,17 @@ const PROJECTS = [
 ];
 
 const PROJECT_MAILS = [
-  {id:101,title:"金融系基幹システム刷新 詳細設計〜製造",skills:"Java、Spring Boot、Oracle",location:"東京都 千代田区",price:"65〜75万円",start:"即日、9月〜",from:"sales@example.co.jp",received:"2026-08-19 09:42",status:"open"},
-  {id:102,title:"ECサイトリプレイス フロントエンド開発",skills:"React、TypeScript、Next.js",location:"東京都 渋谷区",price:"60〜70万円",start:"即日",from:"client@example.co.jp",received:"2026-08-18 16:10",status:"open"},
-  {id:103,title:"物流管理システム新規開発 PM候補",skills:"PM、Java、AWS",location:"東京都 港区",price:"80〜95万円",start:"9月〜",from:"partner@example.co.jp",received:"2026-08-17 13:25",status:"closed"},
-  {id:104,title:"医療系Webアプリ バックエンド開発",skills:"Python、Django、PostgreSQL",location:"フルリモート",price:"70〜85万円",start:"即日、8月〜",from:"contact@example.co.jp",received:"2026-08-15 11:03",status:"open"}
+  {id:101,title:"金融系基幹システム刷新 詳細設計〜製造",skills:"Java、Spring Boot、Oracle",location:"東京都 千代田区",price:"65〜75万円",priceMin:65,priceMax:75,start:"即日、9月〜",startYm:"2026-09",remote:"一部リモート",flow:"2社先まで",freelancer:true,foreign:false,duplicateCount:3,from:"sales@example.co.jp",received:"2026-08-19 09:42",status:"open"},
+  {id:102,title:"ECサイトリプレイス フロントエンド開発",skills:"React、TypeScript、Next.js",location:"東京都 渋谷区",price:"60〜70万円",priceMin:60,priceMax:70,start:"即日",startYm:"2026-08",remote:"フルリモート",flow:"制限なし",freelancer:true,foreign:true,duplicateCount:1,from:"client@example.co.jp",received:"2026-08-18 16:10",status:"open"},
+  {id:103,title:"物流管理システム新規開発 PM候補",skills:"PM、Java、AWS",location:"東京都 港区",price:"80〜95万円",priceMin:80,priceMax:95,start:"9月〜",startYm:"2026-09",remote:"出社",flow:"自社社員まで",freelancer:false,foreign:false,duplicateCount:2,from:"partner@example.co.jp",received:"2026-08-17 13:25",status:"closed"},
+  {id:104,title:"医療系Webアプリ バックエンド開発",skills:"Python、Django、PostgreSQL",location:"フルリモート",price:"70〜85万円",priceMin:70,priceMax:85,start:"即日、8月〜",startYm:"2026-08",remote:"フルリモート",flow:"制限なし",freelancer:true,foreign:true,duplicateCount:1,from:"contact@example.co.jp",received:"2026-08-15 11:03",status:"open"}
 ];
 
 const STAFF_MAILS = [
-  {id:201,initial:"Y.N",age:"32歳",gender:"男性",station:"船橋",affiliation:"自社",price:"65万円",start:"即日",skills:"PHP、Laravel、MySQL、Vue.js",received:"2026-08-19 10:18",from:"staff@example.co.jp"},
-  {id:202,initial:"M.K",age:"28歳",gender:"女性",station:"新宿",affiliation:"協力会社",price:"70万円",start:"9月〜",skills:"Java、Spring Boot、AWS",received:"2026-08-18 14:52",from:"partner@example.co.jp"},
-  {id:203,initial:"R.S",age:"35歳",gender:"男性",station:"横浜",affiliation:"協力会社",price:"80万円",start:"即日",skills:"Python、Django、GCP",received:"2026-08-16 09:31",from:"staff2@example.co.jp"},
-  {id:204,initial:"A.T",age:"26歳",gender:"女性",station:"大宮",affiliation:"自社",price:"55万円",start:"10月〜",skills:"C#、.NET、SQL Server",received:"2026-08-14 17:05",from:"staff3@example.co.jp"}
+  {id:201,initial:"Y.N",age:"32歳",ageValue:32,gender:"男性",station:"船橋",affiliation:"自社",price:"65万円",priceValue:65,start:"即日",startYm:"2026-08",skills:"PHP、Laravel、MySQL、Vue.js",promoted:false,duplicateCount:3,received:"2026-08-19 10:18",from:"staff@example.co.jp"},
+  {id:202,initial:"M.K",age:"28歳",ageValue:28,gender:"女性",station:"新宿",affiliation:"協力会社",price:"70万円",priceValue:70,start:"9月〜",startYm:"2026-09",skills:"Java、Spring Boot、AWS",promoted:true,duplicateCount:1,received:"2026-08-18 14:52",from:"partner@example.co.jp"},
+  {id:203,initial:"R.S",age:"35歳",ageValue:35,gender:"男性",station:"横浜",affiliation:"協力会社",price:"80万円",priceValue:80,start:"即日",startYm:"2026-08",skills:"Python、Django、GCP",promoted:false,duplicateCount:2,received:"2026-08-16 09:31",from:"staff2@example.co.jp"},
+  {id:204,initial:"A.T",age:"26歳",ageValue:26,gender:"女性",station:"大宮",affiliation:"自社",price:"55万円",priceValue:55,start:"10月〜",startYm:"2026-10",skills:"C#、.NET、SQL Server",promoted:false,duplicateCount:1,received:"2026-08-14 17:05",from:"staff3@example.co.jp"}
 ];
 
 const MATCHINGS = [
@@ -570,6 +584,26 @@ const PROPOSALS = [
 const $ = s => document.querySelector(s);
 const main = $("#main");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const PAGE_SIZE_OPTIONS = [50,100,200,500];
+function activeFilterLabel(count){ return `詳細条件${count ? `（${count}件指定中）` : ""}`; }
+function duplicateBadge(count){ return count > 1 ? `<span class="chip duplicate-badge">重複${count}件</span>` : ""; }
+function pageSlice(rows,state){
+  const size = Number(state.size)||100;
+  const pages = Math.max(1,Math.ceil(rows.length/size));
+  state.page = Math.min(Math.max(1,Number(state.page)||1),pages);
+  return rows.slice((state.page-1)*size,state.page*size);
+}
+function pagerHtml(count,state,key){
+  const size=Number(state.size)||100, page=Math.max(1,Number(state.page)||1), start=count?((page-1)*size+1):0, end=Math.min(count,page*size);
+  return `<div class="pager"><span>1ページの表示数:</span><select class="ctl" data-page-size="${key}">${PAGE_SIZE_OPTIONS.map(n=>`<option value="${n}"${size===n?" selected":""}>${n}</option>`).join("")}</select><div class="spacer"></div><span>${start}–${end} / ${count}</span><button class="btn sm" data-page-prev="${key}"${page<=1?" disabled":""}>‹</button><button class="btn sm" data-page-next="${key}"${end>=count?" disabled":""}>›</button></div>`;
+}
+function bindPager(state,key,render){
+  const size=main.querySelector(`[data-page-size="${key}"]`),prev=main.querySelector(`[data-page-prev="${key}"]`),next=main.querySelector(`[data-page-next="${key}"]`);
+  if(size) size.onchange=e=>{state.size=Number(e.target.value);state.page=1;render();};
+  if(prev) prev.onclick=()=>{state.page=Math.max(1,state.page-1);render();};
+  if(next) next.onclick=()=>{state.page+=1;render();};
+}
 
 /* 要件: 年齢はDBに保存せず生年月日から算出する */
 function calcAge(birth){
@@ -949,7 +983,10 @@ function screenList(){
   $("#typeBp").onclick = () => { listFilter.type="BP"; screenList(); };
 }
 
-let mailListFilter = {projectQ:"", projectStatus:"", staffQ:""};
+let mailListFilter = {
+  project:{q:"",status:"",location:"",skills:"",priceMin:"",priceMax:"",startFrom:"",startTo:"",remote:"",flow:"",freelancer:"",foreign:"",detailsOpen:false,page:1,size:100},
+  staff:{q:"",promoted:"",affiliation:"",station:"",skills:"",ageMin:"",ageMax:"",priceMin:"",priceMax:"",startFrom:"",startTo:"",duplicate:"",detailsOpen:false,page:1,size:100}
+};
 function mailImportPanel(){
   return `<div class="card"><div class="bd"><div class="acts" style="align-items:center">
     <button class="btn primary" data-mail-import-run="1">メール取り込み</button><button class="btn" data-mail-history="1">履歴</button>
@@ -972,40 +1009,76 @@ function openUnknownTermDecision(term){
   </div><div class="dialog-actions"><button class="btn" data-dialog-close="1">閉じる</button></div></div></div>`);
 }
 function screenProjectMailList(){
+  const f=mailListFilter.project;
   const rows = PROJECT_MAILS.filter(m => {
-    const q = mailListFilter.projectQ.trim();
-    return (!q || `${m.title}${m.skills}${m.location}${m.from}`.includes(q)) &&
-      (!mailListFilter.projectStatus || m.status === mailListFilter.projectStatus);
+    const q=f.q.trim().toLowerCase();
+    return (!q||`${m.title}${m.skills}${m.location}${m.from}`.toLowerCase().includes(q))&&(!f.status||m.status===f.status)&&
+      (!f.location||m.location.includes(f.location))&&(!f.skills||m.skills.toLowerCase().includes(f.skills.toLowerCase()))&&
+      (!f.priceMin||m.priceMax>=Number(f.priceMin))&&(!f.priceMax||m.priceMin<=Number(f.priceMax))&&
+      (!f.startFrom||m.startYm>=f.startFrom)&&(!f.startTo||m.startYm<=f.startTo)&&(!f.remote||m.remote===f.remote)&&
+      (!f.flow||m.flow===f.flow)&&(!f.freelancer||String(m.freelancer)===f.freelancer)&&(!f.foreign||String(m.foreign)===f.foreign);
   });
+  const detailCount=[f.location,f.skills,f.priceMin,f.priceMax,f.startFrom,f.startTo,f.remote,f.flow,f.freelancer,f.foreign].filter(Boolean).length;
+  const pageRows=pageSlice(rows,f);
   main.innerHTML = `
   ${crumb([{label:"ホーム"},{label:"案件メール一覧"}])}
   <div class="pagehead"><div><h1>案件メール一覧</h1></div></div>
   ${mailImportPanel()}
   <div class="card"><div class="bd"><div class="filters">
-    <div class="field"><label>フリーワード</label><input class="ctl" id="projectMailQ" value="${esc(mailListFilter.projectQ)}" placeholder="例: Java、渋谷"></div>
-    <div class="field"><label>ステータス</label><select class="ctl" id="projectMailStatus"><option value="">すべて</option><option value="open"${mailListFilter.projectStatus==="open"?" selected":""}>募集中</option><option value="closed"${mailListFilter.projectStatus==="closed"?" selected":""}>終了</option></select></div>
+    <div class="field"><label>フリーワード</label><input class="ctl" id="projectMailQ" value="${esc(f.q)}" placeholder="例: Java、渋谷"><small>案件名・概要・必須/歓迎スキル・勤務地から検索します</small></div>
+    <div class="field"><label>ステータス</label><select class="ctl" id="projectMailStatus"><option value="">すべて</option><option value="open"${f.status==="open"?" selected":""}>募集中</option><option value="closed"${f.status==="closed"?" selected":""}>終了</option></select></div>
     <button class="btn" id="projectMailClear">条件クリア</button>
-  </div></div></div>
+  </div><button class="btn ghost filter-toggle" id="projectDetailToggle">${activeFilterLabel(detailCount)} ${f.detailsOpen?"▲":"▼"}</button>
+  <div class="detail-filter${f.detailsOpen?"":" hidden"}" id="projectDetailFilter"><div class="detail-filter-grid">
+    <div class="field"><label>勤務地</label><input class="ctl" id="projectLocation" value="${esc(f.location)}" placeholder="例: 千代田区"></div>
+    <div class="field"><label>必須スキル</label><input class="ctl" id="projectSkills" value="${esc(f.skills)}" placeholder="例: Java"></div>
+    <div class="field"><label>単価 下限（万円）</label><input class="ctl" id="projectPriceMin" type="number" value="${esc(f.priceMin)}"></div>
+    <div class="field"><label>単価 上限（万円）</label><input class="ctl" id="projectPriceMax" type="number" value="${esc(f.priceMax)}"></div>
+    <div class="field"><label>開始時期 from</label><input class="ctl" id="projectStartFrom" value="${esc(f.startFrom)}" placeholder="yyyy-MM"></div>
+    <div class="field"><label>開始時期 to</label><input class="ctl" id="projectStartTo" value="${esc(f.startTo)}" placeholder="yyyy-MM"></div>
+    <div class="field"><label>リモート区分</label><select class="ctl" id="projectRemote"><option value="">すべて</option>${["出社","一部リモート","フルリモート"].map(x=>`<option${f.remote===x?" selected":""}>${x}</option>`).join("")}</select></div>
+    <div class="field"><label>商流上限</label><select class="ctl" id="projectFlow"><option value="">すべて</option>${["自社社員まで","1社先まで","2社先まで","制限なし"].map(x=>`<option${f.flow===x?" selected":""}>${x}</option>`).join("")}</select></div>
+    <div class="field"><label>個人事業主可否</label><select class="ctl" id="projectFreelancer"><option value="">すべて</option><option value="true"${f.freelancer==="true"?" selected":""}>可</option><option value="false"${f.freelancer==="false"?" selected":""}>不可</option></select></div>
+    <div class="field"><label>外国籍可否</label><select class="ctl" id="projectForeign"><option value="">すべて</option><option value="true"${f.foreign==="true"?" selected":""}>可</option><option value="false"${f.foreign==="false"?" selected":""}>不可</option></select></div>
+  </div></div></div></div>
   <p class="sub">${rows.length} 件</p><div class="card"><div class="bd flush"><div class="tbl-scroll"><table class="tbl"><thead><tr><th>案件名</th><th>必須スキル</th><th>勤務地</th><th>単価</th><th>開始時期</th><th>送信元</th><th>受信日時</th><th>ステータス</th></tr></thead><tbody>
-    ${rows.map(m=>`<tr data-project-mail-open="${m.id}"><td><strong>${esc(m.title)}</strong></td><td>${esc(m.skills)}</td><td>${esc(m.location)}</td><td>${esc(m.price)}</td><td>${esc(m.start)}</td><td>${esc(m.from)}</td><td>${esc(m.received)}</td><td>${m.status==="open"?'<span class="chip ok">募集中</span>':'<span class="chip">終了</span>'}</td></tr>`).join("") || '<tr><td colspan="8"><div class="empty">該当する案件がありません。</div></td></tr>'}
-  </tbody></table></div></div></div>`;
-  $("#projectMailQ").oninput = e => { mailListFilter.projectQ=e.target.value; screenProjectMailList(); };
-  $("#projectMailStatus").onchange = e => { mailListFilter.projectStatus=e.target.value; screenProjectMailList(); };
-  $("#projectMailClear").onclick = () => { mailListFilter.projectQ=""; mailListFilter.projectStatus=""; screenProjectMailList(); };
+    ${pageRows.map(m=>`<tr data-project-mail-open="${m.id}"><td><strong>${esc(m.title)}</strong>${duplicateBadge(m.duplicateCount)}</td><td>${esc(m.skills)}</td><td>${esc(m.location)}</td><td>${esc(m.price)}</td><td>${esc(m.start)}</td><td>${esc(m.from)}</td><td>${esc(m.received)}</td><td>${m.status==="open"?'<span class="chip ok">募集中</span>':'<span class="chip">終了</span>'}</td></tr>`).join("") || '<tr><td colspan="8"><div class="empty">該当する案件がありません。</div></td></tr>'}
+  </tbody></table></div>${rows.length?pagerHtml(rows.length,f,"project"):""}</div></div>`;
+  $("#projectMailQ").onchange=e=>{f.q=e.target.value;f.page=1;screenProjectMailList();};
+  $("#projectMailStatus").onchange=e=>{f.status=e.target.value;f.page=1;screenProjectMailList();};
+  $("#projectMailClear").onclick=()=>{mailListFilter.project={q:"",status:"",location:"",skills:"",priceMin:"",priceMax:"",startFrom:"",startTo:"",remote:"",flow:"",freelancer:"",foreign:"",detailsOpen:f.detailsOpen,page:1,size:f.size};screenProjectMailList();};
+  $("#projectDetailToggle").onclick=()=>{f.detailsOpen=!f.detailsOpen;screenProjectMailList();};
+  [["projectLocation","location"],["projectSkills","skills"],["projectPriceMin","priceMin"],["projectPriceMax","priceMax"],["projectStartFrom","startFrom"],["projectStartTo","startTo"],["projectRemote","remote"],["projectFlow","flow"],["projectFreelancer","freelancer"],["projectForeign","foreign"]].forEach(([id,key])=>{$("#"+id).onchange=e=>{f[key]=e.target.value;f.page=1;screenProjectMailList();};});
+  bindPager(f,"project",screenProjectMailList);
 }
 function screenStaffMailList(){
-  const q = mailListFilter.staffQ.trim();
-  const rows = STAFF_MAILS.filter(m => !q || `${m.initial}${m.station}${m.affiliation}${m.skills}${m.from}`.includes(q));
+  const f=mailListFilter.staff,q=f.q.trim().toLowerCase();
+  const rows=STAFF_MAILS.filter(m=>(!q||`${m.initial}${m.station}${m.affiliation}${m.skills}${m.from}`.toLowerCase().includes(q))&&
+    (!f.promoted||String(m.promoted)===f.promoted)&&(!f.affiliation||m.affiliation.includes(f.affiliation))&&(!f.station||m.station.includes(f.station))&&
+    (!f.skills||m.skills.toLowerCase().includes(f.skills.toLowerCase()))&&(!f.ageMin||m.ageValue>=Number(f.ageMin))&&(!f.ageMax||m.ageValue<=Number(f.ageMax))&&
+    (!f.priceMin||m.priceValue>=Number(f.priceMin))&&(!f.priceMax||m.priceValue<=Number(f.priceMax))&&(!f.startFrom||m.startYm>=f.startFrom)&&(!f.startTo||m.startYm<=f.startTo)&&
+    (!f.duplicate||(f.duplicate==="true"?m.duplicateCount>1:m.duplicateCount<=1)));
+  const detailCount=[f.promoted,f.affiliation,f.station,f.skills,f.ageMin,f.ageMax,f.priceMin,f.priceMax,f.startFrom,f.startTo,f.duplicate].filter(Boolean).length;
+  const pageRows=pageSlice(rows,f);
   main.innerHTML = `
   ${crumb([{label:"ホーム"},{label:"要員メール一覧"}])}
   <div class="pagehead"><div><h1>要員メール一覧</h1></div></div>
   ${mailImportPanel()}
-  <div class="card"><div class="bd"><div class="filters"><div class="field"><label>フリーワード</label><input class="ctl" id="staffMailQ" value="${esc(mailListFilter.staffQ)}" placeholder="例: Java、新宿"></div><button class="btn" id="staffMailClear">条件クリア</button></div></div></div>
+  <div class="card"><div class="bd"><div class="filters"><div class="field"><label>フリーワード</label><input class="ctl" id="staffMailQ" value="${esc(f.q)}" placeholder="例: Java、新宿"></div><button class="btn" id="staffMailClear">条件クリア</button></div><button class="btn ghost filter-toggle" id="staffDetailToggle">${activeFilterLabel(detailCount)} ${f.detailsOpen?"▲":"▼"}</button>
+  <div class="detail-filter${f.detailsOpen?"":" hidden"}"><div class="detail-filter-grid">
+    <div class="field"><label>昇格状況</label><select class="ctl" id="staffPromoted"><option value="">すべて</option><option value="true"${f.promoted==="true"?" selected":""}>昇格済み</option><option value="false"${f.promoted==="false"?" selected":""}>未昇格</option></select></div>
+    <div class="field"><label>所属</label><input class="ctl" id="staffAffiliation" value="${esc(f.affiliation)}" placeholder="例: 個人事業主"></div><div class="field"><label>最寄駅</label><input class="ctl" id="staffStation" value="${esc(f.station)}" placeholder="例: 新宿駅"></div><div class="field"><label>スキル</label><input class="ctl" id="staffSkills" value="${esc(f.skills)}" placeholder="例: Java"></div>
+    <div class="field"><label>年齢 下限</label><input class="ctl" id="staffAgeMin" type="number" value="${esc(f.ageMin)}"></div><div class="field"><label>年齢 上限</label><input class="ctl" id="staffAgeMax" type="number" value="${esc(f.ageMax)}"></div><div class="field"><label>単価 下限（万円）</label><input class="ctl" id="staffPriceMin" type="number" value="${esc(f.priceMin)}"></div><div class="field"><label>単価 上限（万円）</label><input class="ctl" id="staffPriceMax" type="number" value="${esc(f.priceMax)}"></div>
+    <div class="field"><label>稼働開始 from</label><input class="ctl" id="staffStartFrom" value="${esc(f.startFrom)}" placeholder="yyyy-MM"></div><div class="field"><label>稼働開始 to</label><input class="ctl" id="staffStartTo" value="${esc(f.startTo)}" placeholder="yyyy-MM"></div><div class="field"><label>重複</label><select class="ctl" id="staffDuplicate"><option value="">すべて</option><option value="true"${f.duplicate==="true"?" selected":""}>重複あり</option><option value="false"${f.duplicate==="false"?" selected":""}>単独</option></select></div>
+  </div></div></div></div>
   <p class="sub">${rows.length} 件</p><div class="card"><div class="bd flush"><div class="tbl-scroll"><table class="tbl"><thead><tr><th>イニシャル</th><th>年齢</th><th>性別</th><th>最寄駅</th><th>所属</th><th>単価</th><th>稼働開始</th><th>スキル</th></tr></thead><tbody>
-    ${rows.map(m=>`<tr data-staff-mail-open="${m.id}"><td><strong>${esc(m.initial)}</strong></td><td>${esc(m.age)}</td><td>${esc(m.gender)}</td><td>${esc(m.station)}</td><td>${esc(m.affiliation)}</td><td>${esc(m.price)}</td><td>${esc(m.start)}</td><td>${esc(m.skills)}</td></tr>`).join("") || '<tr><td colspan="8"><div class="empty">該当する要員がいません。</div></td></tr>'}
-  </tbody></table></div></div></div>`;
-  $("#staffMailQ").oninput = e => { mailListFilter.staffQ=e.target.value; screenStaffMailList(); };
-  $("#staffMailClear").onclick = () => { mailListFilter.staffQ=""; screenStaffMailList(); };
+    ${pageRows.map(m=>`<tr data-staff-mail-open="${m.id}"><td><strong>${esc(m.initial)}</strong>${duplicateBadge(m.duplicateCount)}</td><td>${esc(m.age)}</td><td>${esc(m.gender)}</td><td>${esc(m.station)}</td><td>${esc(m.affiliation)}</td><td>${esc(m.price)}</td><td>${esc(m.start)}</td><td>${esc(m.skills)}</td></tr>`).join("") || '<tr><td colspan="8"><div class="empty">該当する要員がいません。</div></td></tr>'}
+  </tbody></table></div>${rows.length?pagerHtml(rows.length,f,"staff"):""}</div></div>`;
+  $("#staffMailQ").onchange=e=>{f.q=e.target.value;f.page=1;screenStaffMailList();};
+  $("#staffMailClear").onclick=()=>{mailListFilter.staff={q:"",promoted:"",affiliation:"",station:"",skills:"",ageMin:"",ageMax:"",priceMin:"",priceMax:"",startFrom:"",startTo:"",duplicate:"",detailsOpen:f.detailsOpen,page:1,size:f.size};screenStaffMailList();};
+  $("#staffDetailToggle").onclick=()=>{f.detailsOpen=!f.detailsOpen;screenStaffMailList();};
+  [["staffPromoted","promoted"],["staffAffiliation","affiliation"],["staffStation","station"],["staffSkills","skills"],["staffAgeMin","ageMin"],["staffAgeMax","ageMax"],["staffPriceMin","priceMin"],["staffPriceMax","priceMax"],["staffStartFrom","startFrom"],["staffStartTo","startTo"],["staffDuplicate","duplicate"]].forEach(([id,key])=>{$("#"+id).onchange=e=>{f[key]=e.target.value;f.page=1;screenStaffMailList();};});
+  bindPager(f,"staff",screenStaffMailList);
 }
 
 function sourceMailCard(mail, kind){
@@ -1106,19 +1179,33 @@ function screenSkillMaster(){
   if($("#skillMasterQ")) $("#skillMasterQ").oninput=e=>main.querySelectorAll("[data-master-name]").forEach(row=>row.classList.toggle("hidden",!row.dataset.masterName.includes(e.target.value.toLowerCase())));
 }
 
+let matchingFilter={status:"",unproposed:false,projectTitle:"",personName:"",scoreMin:"",subjectType:"",detailsOpen:false,page:1,size:100};
 function screenMatchingList(){
-  const rows = MATCHINGS.map(matchingView);
+  const f=matchingFilter;
+  const rows=MATCHINGS.map(matchingView).filter(r=>{
+    const candidate=[4,6].includes(r.id),status=r.approved?"承認済み":"未対応",person=candidate?r.staffInitial:r.staff.name;
+    return (!f.unproposed||r.approved)&&(!f.status||status===f.status)&&(!f.projectTitle||r.project.name.includes(f.projectTitle))&&
+      (!f.personName||person.includes(f.personName))&&(!f.scoreMin||r.score>=Number(f.scoreMin))&&(!f.subjectType||(f.subjectType==="candidate"?candidate:!candidate));
+  });
+  const detailCount=[f.projectTitle,f.personName,f.scoreMin,f.subjectType].filter(Boolean).length,pageRows=pageSlice(rows,f);
   main.innerHTML = `
   ${crumb([{label:"ホーム"},{label:"マッチング一覧"}])}
   <div class="pagehead">
     <div><h1>マッチング一覧</h1></div>
   </div>
-  <div class="card"><div class="bd"><div class="filters"><div class="field"><label>状態</label><select class="ctl" id="matchStatus"><option>すべて</option><option>未対応</option><option>承認済み</option><option>見送り</option></select></div><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="matchUnproposed">承認済みで提案未作成のみ</label></div></div></div>
+  <div class="card"><div class="bd"><div class="filters"><div class="field"><label>状態</label><select class="ctl" id="matchStatus"${f.unproposed?" disabled":""}><option value="">すべて</option>${["未対応","承認済み","見送り"].map(x=>`<option${f.status===x?" selected":""}>${x}</option>`).join("")}</select></div><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="matchUnproposed"${f.unproposed?" checked":""}>承認済みで提案未作成のみ</label><button class="btn" id="matchClear">条件クリア</button></div>
+  <button class="btn ghost filter-toggle" id="matchDetailToggle">${activeFilterLabel(detailCount)} ${f.detailsOpen?"▲":"▼"}</button><div class="detail-filter${f.detailsOpen?"":" hidden"}"><div class="detail-filter-grid">
+    <div class="field"><label>案件名</label><input class="ctl" id="matchProjectTitle" value="${esc(f.projectTitle)}" placeholder="例: 基幹システム"></div><div class="field"><label>メンバー／候補名</label><input class="ctl" id="matchPersonName" value="${esc(f.personName)}" placeholder="例: 山田、S.T"></div><div class="field"><label>点数の下限</label><input class="ctl" id="matchScoreMin" type="number" min="0" max="100" value="${esc(f.scoreMin)}" placeholder="0〜100"></div><div class="field"><label>対象</label><select class="ctl" id="matchSubjectType"><option value="">すべて</option><option value="member"${f.subjectType==="member"?" selected":""}>メンバーのみ</option><option value="candidate"${f.subjectType==="candidate"?" selected":""}>要員候補のみ</option></select></div>
+  </div></div></div></div>
   <div class="card"><div class="bd flush"><div class="tbl-scroll"><table class="tbl"><thead><tr><th>案件名</th><th>メンバー名</th><th>点数</th><th>一致スキル</th><th>不足スキル</th><th>状態</th><th>操作</th></tr></thead><tbody>
-    ${rows.map(r=>{const candidate=[4,6].includes(r.id);return `<tr data-matching-result="${r.id}"><td><button class="linklike" data-project-detail="${r.project.id}">${esc(r.project.name)}</button></td><td>${esc(candidate?r.staffInitial:(r.staff.name || r.staffInitial))}${candidate?' <span class="chip warn">候補</span>':""}</td><td class="num">${r.score}点</td><td><div class="taglist">${r.staff.skills.filter(k=>r.project.required.includes(k.name)).slice(0,4).map(k=>`<span class="tag">${esc(k.name)} ${months2y(k.months)}</span>`).join("") || "—"}</div></td><td><div class="taglist">${r.project.required.filter(skill=>!r.staff.skills.some(k=>k.name===skill)).map(x=>`<span class="tag gray">${esc(x)}</span>`).join("") || "—"}</div></td><td>${r.approved?'<span class="chip ok">承認済み</span><span class="chip warn">未提案</span>':'<span class="chip">未対応</span>'}</td><td>${candidate?`<button class="btn sm" data-promote-candidate="${r.id}">昇格</button>`:""}<button class="btn sm" data-match-dismiss="1">見送り</button></td></tr>`}).join("")}
-  </tbody></table></div></div></div>`;
-  $("#matchStatus").onchange = e => toast(`${e.target.value}で絞り込みました（モック）`);
-  $("#matchUnproposed").onchange = e => toast(e.target.checked?"承認済み・未提案のみ表示します":"すべて表示します");
+    ${pageRows.map(r=>{const candidate=[4,6].includes(r.id),projectMail=PROJECT_MAILS.find(m=>m.id===r.project.id),candidateMail=STAFF_MAILS[candidate?(r.id===4?2:0):1];return `<tr data-matching-result="${r.id}"><td><button class="linklike" data-project-detail="${r.project.id}">${esc(r.project.name)}</button>${duplicateBadge(projectMail?.duplicateCount||1)}</td><td>${esc(candidate?r.staffInitial:(r.staff.name || r.staffInitial))}${candidate?' <span class="chip warn">候補</span>':""}${candidate?duplicateBadge(candidateMail?.duplicateCount||1):""}</td><td class="num">${r.score}点</td><td><div class="taglist">${r.staff.skills.filter(k=>r.project.required.includes(k.name)).slice(0,4).map(k=>`<span class="tag">${esc(k.name)} ${months2y(k.months)}</span>`).join("") || "—"}</div></td><td><div class="taglist">${r.project.required.filter(skill=>!r.staff.skills.some(k=>k.name===skill)).map(x=>`<span class="tag gray">${esc(x)}</span>`).join("") || "—"}</div></td><td>${r.approved?'<span class="chip ok">承認済み</span><span class="chip warn">未提案</span>':'<span class="chip">未対応</span>'}</td><td>${candidate?`<button class="btn sm" data-promote-candidate="${r.id}">昇格</button>`:""}<button class="btn sm" data-match-dismiss="1">見送り</button></td></tr>`}).join("")||'<tr><td colspan="7"><div class="empty">該当するマッチングがありません</div></td></tr>'}
+  </tbody></table></div>${rows.length?pagerHtml(rows.length,f,"matching"):""}</div></div>`;
+  $("#matchStatus").onchange=e=>{f.status=e.target.value;f.page=1;screenMatchingList();};
+  $("#matchUnproposed").onchange=e=>{f.unproposed=e.target.checked;if(f.unproposed)f.status="";f.page=1;screenMatchingList();};
+  $("#matchClear").onclick=()=>{matchingFilter={status:"",unproposed:false,projectTitle:"",personName:"",scoreMin:"",subjectType:"",detailsOpen:f.detailsOpen,page:1,size:f.size};screenMatchingList();};
+  $("#matchDetailToggle").onclick=()=>{f.detailsOpen=!f.detailsOpen;screenMatchingList();};
+  [["matchProjectTitle","projectTitle"],["matchPersonName","personName"],["matchScoreMin","scoreMin"],["matchSubjectType","subjectType"]].forEach(([id,key])=>{$("#"+id).onchange=e=>{f[key]=e.target.value;f.page=1;screenMatchingList();};});
+  bindPager(f,"matching",screenMatchingList);
 }
 
 let proposalFilter = {projectId:"",personnelId:"",status:"",showDone:false};
@@ -1166,7 +1253,7 @@ function screenMemberEdit(id){
     <div class="field" style="min-width:100%"><label>備考</label><textarea class="ctl" rows="2">${esc(v.pr||"")}</textarea></div>
   </div></div></div>
   <div class="card"><div class="hd"><h2>個人属性（住所・希望条件）</h2></div><div class="bd"><div class="filters">
-    <div class="field"><label>社員番号</label><input class="ctl" value="${esc(v.code)}"></div><div class="field"><label>フリガナ</label><input class="ctl" value="${esc(v.kana)}"></div>
+    <div class="field"><label>社員番号</label><input class="ctl" maxlength="8" value="${esc(v.code)}" placeholder="例: 0012 / BP000001"><small>未入力の場合は自動採番されます（社員: 連番の数字／管理BP: 「BP」+6桁）</small></div><div class="field"><label>フリガナ</label><input class="ctl" value="${esc(v.kana)}"></div>
     <div class="field"><label>都道府県</label><input class="ctl" value="${esc(v.pref)}"></div><div class="field"><label>市区町村</label><input class="ctl" value="${esc(v.city)}"></div>
     <div class="field"><label>最終学歴</label><input class="ctl" value="${esc(v.education)}"></div><div class="field"><label>希望勤務地</label><input class="ctl" value="${esc(v.prefLoc)}"></div>
     <div class="field"><label>リモート希望</label><select class="ctl"><option>${esc(v.remote||"未設定")}</option><option>出社可</option><option>フルリモート希望</option></select></div><div class="field"><label>勤怠提出元</label><select class="ctl"><option>上位会社</option><option>参画中メンバー</option></select></div>
@@ -1174,6 +1261,11 @@ function screenMemberEdit(id){
   <div class="card"><div class="hd"><h2>スキルシート</h2></div><div class="bd"><p>${s?`紐付け済み: ${esc(s.name)} のスキルシート` : "未選択"}</p><button class="btn">スキルシートを選択</button></div></div>
   <div class="card"><div class="hd"><h2>保有スキル</h2></div><div class="bd"><div class="taglist">${(v.skills||[]).map(k=>`<span class="tag">${esc(k.name)} ${months2y(k.months)}</span>`).join("")||'<span class="sub">スキルを追加してください</span>'}</div><div class="field" style="margin-top:12px"><label>スキルを追加</label><input class="ctl" placeholder="マスタから検索"></div></div></div>
   <div class="acts" style="justify-content:flex-start"><button class="btn primary" data-member-save="${id||"new"}">保存</button><button class="btn" data-nav="members">キャンセル</button></div>`;
+}
+
+function matchingMailFrame(title,mails,kind){
+  if(!mails.length) return `<div class="mail-frame"><div class="mail-frame-title">${title}</div><div class="empty">元メールなし${kind==="project"?"（手動登録された案件です）":""}</div></div>`;
+  return `<div class="mail-frame"><div class="mail-frame-title">${title}</div><div class="mail-frame-scroll">${mails.map((m,i)=>`<label class="mail-choice${i===0?" selected":""}"><input type="radio" name="${kind}Mail"${i===0?" checked":""}><span><strong>${esc((m.from||"").split("@")[0]||"（送信元不明）")}</strong><span class="sub" style="display:block">${esc(m.from||"")}</span><span class="mail-subject" style="display:block">${esc(kind==="project"?m.title:`【要員情報】${m.initial} / ${m.skills}`)}</span><span class="sub">受信: ${esc(m.received||"")}</span>　<button type="button" class="linklike" ${kind==="project"?`data-project-mail-open="${m.id}"`:`data-staff-mail-open="${m.id}"`}>${title}詳細</button></span></label>`).join("")}</div></div>`;
 }
 
 function screenMatchingResult(id){
@@ -1187,6 +1279,9 @@ function screenMatchingResult(id){
     ["商流","2社先まで",memberType(r.staff)==="BP"?"1社先BP":"自社社員","OK"],["外国籍","不可","日本国籍","OK"],["個人事業主","不可","それ以外","OK"]
   ];
   const candidate=[4,6].includes(r.id);
+  const projectMails=[PROJECT_MAILS.find(m=>m.id===r.project.id),...PROJECT_MAILS].filter((m,i,a)=>m&&a.findIndex(x=>x.id===m.id)===i).slice(0,2);
+  const candidateBase=candidate?STAFF_MAILS[r.id===4?2:0]:null;
+  const staffMails=candidate?[candidateBase,...STAFF_MAILS].filter((m,i,a)=>m&&a.findIndex(x=>x.id===m.id)===i).slice(0,Math.max(2,candidateBase?.duplicateCount||1)):[];
   main.innerHTML = `
   ${crumb([{label:"ホーム"},{label:"マッチング一覧",nav:"matching"},{label:`${r.project.name} × ${r.staff.name}`}])}
   <div class="pagehead"><div><h1><button class="linklike" data-project-detail="${r.project.id}">${esc(r.project.name)}</button> × ${esc(candidate?r.staffInitial:r.staff.name)} ${candidate?'<span class="chip warn">候補</span>':""}</h1><div class="acts" style="justify-content:flex-start;margin-top:8px"><strong style="font-size:20px">${r.score}点</strong><span class="sub">（スキル評価 ${Math.min(100,r.score+4)}点 × 条件係数 0.96）</span>${r.approved?'<span class="chip ok">承認済み</span><span class="chip warn">未提案</span>':'<span class="chip">未対応</span>'}<button class="btn sm primary" data-match-approve="1" ${r.approved?"disabled":""}>承認</button></div></div></div>
@@ -1195,8 +1290,12 @@ function screenMatchingResult(id){
       ${r.project.required.map(skill=>{const k=r.staff.skills.find(x=>x.name===skill);return `<tr style="cursor:default"><td>${esc(skill)} <span class="chip pri">必須</span></td><td>必須</td><td${k?"":" style=\"background:#fff4e5\""}>${k?esc(months2y(k.months)):'<span class="chip warn">不足</span>'}</td></tr>`}).join("")}
       ${conditionRows.map(row=>`<tr style="cursor:default"><td><strong>${esc(row[0])}</strong></td><td>${esc(row[1])}</td><td>${esc(row[2])}</td></tr>`).join("")}
     </tbody></table></div></div></div>
-    <div><h2 style="font-size:16px">重複メール</h2><div class="card"><div class="bd">${PROJECT_MAILS.filter(m=>m.id===r.project.id).concat(PROJECT_MAILS.slice(0,2)).slice(0,2).map((m,i)=>`<div style="padding:${i?"14px 0 0":"0"};${i?"border-top:1px solid var(--border)":""}"><strong>${esc(m.from.split("@")[0])}</strong><div class="sub">${esc(m.from)}</div><p>${esc(m.title)}</p><div class="acts"><span class="sub">受信: ${esc(m.received)}</span><button class="linklike" data-project-mail-open="${m.id}">案件メール詳細</button><button class="btn sm" data-proposal-create="1">${r.approved?"提案":"提案"}</button></div></div>`).join("")}</div></div><div class="acts" style="justify-content:flex-start;margin-top:16px"><button class="btn danger" data-match-dismiss="1">見送り</button></div></div>
+    <div>${matchingMailFrame("案件メール",projectMails,"project")}${candidate?matchingMailFrame("要員メール",staffMails,"staff"):""}<div class="acts" style="justify-content:flex-end;margin-top:16px"><button class="btn primary" data-proposal-create="${candidate?"candidate":"member"}">${r.approved?"提案":"提案"}</button><button class="btn danger" data-match-dismiss="1">見送り</button></div>${candidate?'<p class="sub">提案時にメンバーへ昇格します（名前はイニシャルのまま登録されます）。</p>':""}</div>
   </div>`;
+  main.querySelectorAll(".mail-choice input").forEach(input=>input.onchange=()=>{
+    const name=input.name;
+    main.querySelectorAll(`input[name="${name}"]`).forEach(radio=>radio.closest(".mail-choice").classList.toggle("selected",radio.checked));
+  });
 }
 
 function screenSesProjectDetail(id, tab="info"){
@@ -1670,7 +1769,7 @@ document.addEventListener("click", ev => {
   if(t.dataset.memberTab){ screenDetail(+t.dataset.memberId, t.dataset.memberTab); return; }
   if(t.dataset.matchOpen){ screenDetail(+t.dataset.matchOpen, "matching"); return; }
   if(t.dataset.proposalOpen){ screenDetail(+t.dataset.proposalOpen, "proposal"); return; }
-  if(t.dataset.proposalCreate){ toast("提案作成画面へ進みます（モック）"); return; }
+  if(t.dataset.proposalCreate){ toast(t.dataset.proposalCreate==="candidate"?"メンバーに昇格して提案を作成します（モック）":"選択した案件メールから提案を作成します（モック）"); return; }
   if(t.dataset.matchApprove){ toast("マッチングを承認しました（モック）"); return; }
   if(t.dataset.matchDismiss){ toast("マッチングを見送りました（モック）"); return; }
   if(t.dataset.pdf){
