@@ -27,6 +27,8 @@ PUT  /ses/personnel/{id}                 更新
 
 - status: `available` / `assigned` / `unavailable`
 - BPの場合 `partnerCompany` (string) を追加で持つ
+- `createDatetime` (string `yyyy-MM-dd HH:mm:ss`・登録日時) を一覧・詳細とも返す（2026-08-21 タスクR2。画面表示は社員=「入社日」/BP=「提案日」のラベルで日付部分のみ。
+  BPの提案日は昇格日=登録日時でよい（元メール受信日への遡りはしない・2026-08-21 人間判断））
 - **一覧レスポンスにも `skills[]` を必ず含める**（2026-08-10 確定。フロントは `skills.slice` を
   前提にしており、省略するとクラッシュする。projects一覧も同様）。フロント側も防御的に
   `skills ?? []` で扱うこと（二重防御）
@@ -43,6 +45,9 @@ priceText, unitPriceMin, unitPriceMax, location, remoteType, startYm, startText,
 interviewCount, description, nationalityAllowed, ageLimit, commercialFlow` + `status`(open/closed) +
 `skills[]`（マスタ紐付け済みタグ）
 
+- `startYm` はレスポンスでも `string(yyyy-MM)` で返す（案件・要員候補とも共通。2026-08-21 明記。
+  DBは `date` 型だが日は01固定の内部表現であり、APIの入出力は年月のみ。
+  画面バリデーション `^\d{4}-(0[1-9]|1[0-2])$` と整合させる。タスクN2）
 - `location` は表示・営業判断用。初期版では自動判定対象にしない
 - `nationalityAllowed` は外国籍可否の条件判定に利用する
 - `ageLimit` は案件側の年齢条件として、要員年齢（`birthDate` から算出）との条件判定に利用する
