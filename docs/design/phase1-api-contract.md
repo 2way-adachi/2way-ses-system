@@ -373,8 +373,12 @@ GET  /ses/mail-import/runs                 取込履歴（実行ヘッダ+アカ
 | `flowLimit` | string | 完全一致。`flowLimit`がNULLの案件は通す |
 | `freelancerAllowed` | boolean | 完全一致。`freelancerAllowed`がNULLの案件は通す |
 | `foreignNationalAllowed` | boolean | 完全一致。`foreignNationalAllowed`がNULLの案件は通す |
+| `region` | string | `1`〜`8`（8地方区分。北海道〜九州沖縄。決定#34の`LocationDictionary`のコードと同値）または`none`（未判定＝`region IS NULL`のみ）。他の絞り込みと異なりNULL許容通過はしない（ピンポイント一致）。`1`〜`8`・`none`以外は400・空ボディ（2026-08-24 タスクAC1） |
 
 `startYmFrom`/`startYmTo`の書式が不正な場合は400・空ボディ。
+
+`region`のバックフィル: `POST /ses/projects/region-backfill`（既存。決定#34）で`projects.region`を再解決できる
+（body `{"all": true}`で全件、未指定はregion未設定のみ対象）。
 
 ### GET /ses/staff-candidates（要員メール一覧。J4・H7）
 
@@ -390,10 +394,15 @@ GET  /ses/mail-import/runs                 取込履歴（実行ヘッダ+アカ
 | `unitPriceMin` / `unitPriceMax` | number(万円/月) | 案件側と同じ考え方（`unitPriceMax >= min` / `unitPriceMin <= max`）。NULLは通す |
 | `startYmFrom` / `startYmTo` | string(yyyy-MM) | `startYm`の範囲。NULLは通す |
 | `duplicated` | boolean | true=名寄せグループの件数が2件以上／false=単独(1件)／未指定=両方 |
+| `region` | string | `1`〜`8`（8地方区分）または`none`（未判定＝`region IS NULL`のみ）。案件側と同じ値仕様（`1`〜`8`・`none`以外は400・空ボディ）。要員候補は`staff_candidates.region`（最寄駅から解決。2026-08-24 タスクAC2で新設）を参照する |
 
 レスポンスに`duplicateCount`（同一名寄せグループ内の総件数。代表自身を含む。グループ未判定・単独候補は1）を
 追加する（H7・決定#40。**案件メール一覧と同じく一覧は畳まず全件表示**したうえで2以上に「重複N件」を表示する
 用途）。`startYmFrom`/`startYmTo`の書式が不正な場合は400・空ボディ。
+
+`region`のバックフィル: `POST /ses/staff-candidates/region-backfill`（新設。2026-08-24 タスクAC2。
+`POST /ses/projects/region-backfill`と対称）で`staff_candidates.region`を再解決できる
+（body `{"all": true}`で全件、未指定はregion未設定のみ対象。最寄駅からの同期辞書引きのみでLLMは使わない）。
 
 ### GET /ses/matchings（マッチング一覧。J5）
 
