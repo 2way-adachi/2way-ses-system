@@ -39,6 +39,9 @@ PUT  /ses/personnel/{id}                 更新
 
 - status: `available` / `assigned` / `unavailable`
 - BPの場合 `partnerCompany` (string) を追加で持つ
+- **スキル入力の一本化（2026-08-21 タスクX・[設計](skill-input-unification.md)）**:
+  `POST/PUT /ses/personnel` の入力から `skills[]` を**廃止**（送っても無視。`personnel_skills` の
+  書き込みはスキルシート保存時の同期と昇格コピーのみ）。レスポンスの `skills[]` は従来どおり返す
 - `createDatetime` (string `yyyy-MM-dd HH:mm:ss`・登録日時) を一覧・詳細とも返す（2026-08-21 タスクR2。画面表示は社員=「入社日」/BP=「提案日」のラベルで日付部分のみ。
   BPの提案日は昇格日=登録日時でよい（元メール受信日への遡りはしない・2026-08-21 人間判断））
 - **一覧レスポンスにも `skills[]` を必ず含める**（2026-08-10 確定。フロントは `skills.slice` を
