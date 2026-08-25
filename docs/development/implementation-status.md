@@ -78,7 +78,10 @@ Lavender／thyme上のSES機能の現状を記録する。**要件ではなく�
 - conditionChecks 7軸（単価・稼働形態・開始時期・年齢・商流=OK/WARNING/NG、外国籍・個人事業主=OK/NG）、
   各軸に日本語の理由。単価は対の値が揃えば部分判定（上限のみ記載の案件でも判定）
 - NG1件で候補から除外。conditionFactor=1.00/0.90/0.80/0.70、score=skillScore×conditionFactor
-  （小数第2位丸め・表示は0〜100点）。ソートはscore降順→一致数降順、上位20件
+  （小数第2位丸め・表示は0〜100点）。ソートはscore降順→一致数降順。
+  案件→候補要員は上位20件のまま。要員→適合案件は上位20件固定を撤廃し全件対象+サーバーページング
+  （status/unproposedOnly/projectTitle/scoreMin/page/size、レスポンスは{items,total}。
+  各行にmailReceivedAt=元メール受信日時を追加。2026-08-25実装・未コミット）
 - match_snapshotはversion付きv2で凍結（既存v1は無移行で従来表示）
 - 実装メモ: 要員側の remote_preference・preferred_location は skill_sheets 側のカラムのため
   紐付きスキルシート経由で取得（未紐付けは「判定材料なし」でOK通過）
@@ -169,7 +172,6 @@ Lavender／thyme上のSES機能の現状を記録する。**要件ではなく�
 
 - スキルシート検索をサーバー側へ移し、ページング後の表示範囲だけに絞り込みが効く状態を解消する
 - `availableFrom` の不正書式を500ではなく400で返す
-- 要員詳細の上位20件外へ落ちた判断済みマッチングを確実に表示する
 - 旧抽出データの商流・開始年月を必要に応じて再抽出する
 - 個人事業主可否の判定材料をメンバー側に追加するか判断する
 - SES系・スキルシート系のE2Eテストを拡充する

@@ -72,8 +72,17 @@ interviewCount, description, nationalityAllowed, ageLimit, commercialFlow` + `st
 
 ```
 GET /ses/projects/{id}/candidates        案件→候補要員（上位20）
-GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
+GET /ses/personnel/{id}/matches          要員→適合案件
+    ?status=&projectTitle=&scoreMin=&page=&size=   ※2026-08-25 サーバーページング化
 ```
+
+- **進行中の提案がある組（hasProposal=true）は常に一覧から除外する**（2026-08-25 人間提案。
+  `GET /ses/matchings`・`GET /ses/personnel/{id}/matches` の両方に適用）。旧`unproposedOnly`
+  パラメータ（承認済み＆提案未作成のみに絞るトグル）はこの既定除外に統合されたため**廃止**した。
+  旧クライアントが`unproposedOnly`クエリを送っても未知パラメータとしてサーバー側でサイレントに無視される
+  （400にはしない）。除外判定はhasProposalの定義（決定#37「進行中の提案があるときだけtrue」）に従うため、
+  won/lost/withdrawn後は一覧へ自然に再登場する（旧トグルにあった`UnproposedBadge`は不要になった。
+  除外方式では一覧に残る承認済みは全て未提案のため）
 
 ```json
 { "candidates": [ {
@@ -163,8 +172,35 @@ GET /ses/personnel/{id}/matches          要員→適合案件（上位20）
 - 場所の参考表示用に、候補側refは要員の `nearestStation`・`preferredLocation` を、適合案件側refは案件の
   `location` を含める（`location` 軸の判定結果とは別に、営業判断材料として原文を並記するため）
 - `reason` は **Phase 2（LLM）用の席**。Phase 1では常にnull。フロントはnull時に非表示
-- レスポンス形状（2026-08-07 確定）: `/projects/{id}/candidates` は `{ "candidates": [...] }`、
-  `/personnel/{id}/matches` は `{ "matches": [...] }`（中身の行構造は同一）
+- レスポンス形状: `/projects/{id}/candidates` は `{ "candidates": [...] }`（2026-08-07 確定）。
+  `/personnel/{id}/matches` は `{ "items": [...], "total": n }` へ変更（2026-08-25
+  メンバー詳細マッチングタブのサーバーページング化。中身の行構造は従来と同一）
+- **適合案件のサーバーページング・絞り込み（2026-08-25）**: `/personnel/{id}/matches` は
+  従来の「上位20固定」を撤廃し全件を対象にする（表示はページングで制御。devDB実測で
+  メンバーあたり中央値325件・最大444件）。絞り込みは `/ses/matchings` と同じ後段フィルタ方式:
+  - `status`（pending|approved|rejected。未知文字列は400）
+  - 進行中の提案がある組（hasProposal=true）は既定で除外する（2026-08-25 unproposedOnly廃止。上記参照）
+  - `projectTitle`（部分一致）
+  - `scoreMin`（0〜100整数。scoreがnullの行=判断済み末尾保証行の扱いは `/ses/matchings` と同一）
+  - `page` / `size`（不正・範囲外は例外にせず既定値へ丸める。SesPagingParser準拠）
+  - `total` はフィルタ適用後・ページ切り前の総件数。ソートはスコア降順、判断済み末尾保証行は末尾
+  - `personName` / `subjectType` は本人固定のため受けない
+- **並び順（2026-08-25 人間指示）**: `/ses/matchings`・`/personnel/{id}/matches` に `sort` を追加。
+  `score`（既定・スコア降順）| `priceDesc`（案件 `unit_price_max` 降順・null末尾・二次キーはスコア降順）。
+  未知文字列は400。適用順はフィルタ→ソート→ページング。行に表示用 `unitPriceMax` を追加
+- **不足スキル集計（2026-08-25 人間指示・推奨最小構成で実装）**: `GET /ses/personnel/{id}/skill-gap-summary`。
+  母集団は「fresh open案件×共通スキル1件以上」で **NG除外なし**（進めない理由を数えるのが目的）。
+  必須スキル（project_skills.required）のうち未保有をスキル別に集計し、
+  `{items:[{skillId, skillName, projectCount, bandCounts:{under60,from60to79,over80,unknown}, fullRemoteCount}]}`
+  （単価帯は unit_price_max 基準 60万未満/60〜79万/80万以上/null、projectCount降順・上位20件）を返す。
+  画面はメンバー詳細マッチングタブ上部の小パネルに上位5件表示。
+  **`maxPrice`は2026-08-25 A3で廃止し`fullRemoteCount`（そのスキルを必須とする案件のうち
+  remoteType=full_remote(0)の件数）に置き換えた**（「このスキルがあれば〜円/フルリモート案件が開ける」
+  というベネフィット提示への見せ方変更に伴う。bandCountsは維持するがフロント表示はover80のみ使用。
+  print-preview-tasks.md A3参照）
+- **鮮度表示（2026-08-25 人間指示）**: `/personnel/{id}/matches` の各行に `mailReceivedAt`
+  （string | null。案件の元メール受信日時。手動登録案件=mail_idなしはnull）を含める。
+  案件はすぐ埋まるため受信日時を営業判断の鮮度指標として画面に出す
 
 ## 提案 proposals
 
@@ -215,6 +251,11 @@ PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?,
 GET /ses/skills?q=                       タグ入力のサジェスト用（alias込みで検索）
 ```
 
+- 応答は `[{skillId, skillName, category}]`（2026-08-25 `category` を後方互換で追加。0:言語/1:FW/2:DB/
+  3:OS/4:インフラ/5:ツール/6:その他）。スキルシート編集の経歴チップサジェストで、使用技術（0,1,6）と
+  使用環境（2,3,4,5,6）へ候補を出し分けるために使う（絞り込みはフロント側。入力済みチップと同名の
+  候補は正規化比較で除外）
+
 - ~~登録・エイリアス管理APIはPhase 1では作らない~~ → **育成画面（A2）実装により方針変更（2026-08-18実装・2026-08-19契約追記）**:
   ```
   GET  /ses/skill-master/unknown-terms?status=   登録待ちスキル一覧（頻度順）
@@ -226,6 +267,19 @@ GET /ses/skills?q=                       タグ入力のサジェスト用（ali
   ```
 - マスタ未登録の語は unknown_terms に蓄積し、スキルマスタ画面の**「登録待ちスキル」タブ**
   （旧称: 未知語トリアージ。2026-08-18改名）で 登録/別名/対象外 の3択で判断する
+
+- **関連スキル（タスクY1a・詳細設計: [skill-relation-suggest.md](20260821_1442_skill-relation-suggest.md)）**:
+  ```
+  GET  /ses/skills/{id}/related                     承認済み関連スキル（両方向解決・起点視点へ正規化）
+  GET  /ses/skill-master/relations?status=pending    承認待ち一覧（管理者のみ。statusはpending固定・他は400）
+  POST /ses/skill-master/relations/decision          承認/却下 { skillRelationId, approve }
+  POST /ses/skill-master/relations/generate          LLM関連スキル生成（同期実行）{ all? }
+  ```
+  - `GET /ses/skills/{id}/related`・`GET /ses/skill-master/relations` はいずれも**封筒形式
+    `{"items": [...]}`** で返す（2026-08-25 バグ修正で明記: `relations` が素配列を返しており
+    Lavender `skillMasterApi.ts` の `res.data.items` 前提と食い違い、関連スキル承認タブが
+    白画面になっていた。`SesPendingSkillRelationListView` で修正済み）
+  - `POST /ses/skill-master/relations/generate` の応答は `{ "generated": n, "skipped": n }`
 
 ## マッチング結果画面（2026-08-19 決定#30）
 
@@ -408,7 +462,7 @@ GET  /ses/mail-import/runs                 取込履歴（実行ヘッダ+アカ
 
 | パラメータ | 型 | 意味 |
 |---|---|---|
-| `status` / `unproposedOnly` | 既存 | 変更なし |
+| `status` | 既存 | 変更なし |
 | `projectTitle` | string | 案件名の部分一致 |
 | `personName` | string | メンバー名または候補イニシャルのいずれかに部分一致すればヒット |
 | `scoreMin` | number(0〜100の整数) | 総合点の下限。`formatMatchingScore`と同じ0〜100点の整数スケールで指定する（内部は0〜1の小数のため、比較は表示と同じ`Math.round(score * 100)`で丸めてから行う。生の100倍値のまま比較すると浮動小数の丸め誤差で境界値が漏れることがあるため。2026-08-20 人間指示で確定）。計算対象から外れた(score無し)組は指定時に除外される |
