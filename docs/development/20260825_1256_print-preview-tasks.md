@@ -55,8 +55,9 @@
   `{items}` 封筒でなく素配列を返しており、Lavenderの `res.data.items` がundefined→
   `skillRelationApproval.tsx:105` の `list.length` でTypeError。`SesPendingSkillRelationListView`
   新設で封筒化し修正（2026-08-25・未コミット。**実機反映はデプロイ後**）。他エンドポイントに同種不一致なし
-- [x] mockの `hasMockProposal()` が決定#37（won/lost/withdrawn後は再登場）に未準拠だった
+- [x] mockの `hasMockProposal()` が決定#37（当時はwon/lost/withdrawn後は再登場）に未準拠だった
   不整合を発見・修正（A1除外方式の前提が崩れるため。`MOCK_PROPOSAL_DONE_STATUSES` 追加）
+  - 2026-08-26追記: 参画ステータス追加後はwonを進行中とし、lost/withdrawn/joined後に再登場する定義へ更新
 - BUG: 提案管理一覧のモック一覧本体が「読み込み中...」のまま止まる。根本修正必要（未着手）
 
 - [x] 分類マスタ（Lavender `skillSheet.master.ts` SKILL_CATEGORY）に「その他(6)」欠落 →
@@ -85,7 +86,7 @@
     これによりトグル自体が不要になる
   - 設計メモ:
     - hasProposal は決定#37により「進行中の提案があるときだけ true」。除外方式なら
-      won/lost/withdrawn 後は一覧へ自然に再登場し、再提案動線（決定#37の意図）とも整合する
+      当時はwon/lost/withdrawn後に再登場する設計（2026-08-26以降はlost/withdrawn/joined後に再登場）
     - 契約変更: unproposedOnly パラメータ廃止（後方互換のため無視 or 400 かは実装時判断）、
       既定で hasProposal=true を除外。phase1-api-contract.md の更新必須
     - メンバー詳細マッチングタブ・全体一覧の両方が対象。判断済み末尾保証行の扱いに注意

@@ -83,7 +83,8 @@ GET /ses/personnel/{id}/matches          要員→適合案件
   パラメータ（承認済み＆提案未作成のみに絞るトグル）はこの既定除外に統合されたため**廃止**した。
   旧クライアントが`unproposedOnly`クエリを送っても未知パラメータとしてサーバー側でサイレントに無視される
   （400にはしない）。除外判定はhasProposalの定義（決定#37「進行中の提案があるときだけtrue」）に従うため、
-  won/lost/withdrawn後は一覧へ自然に再登場する（旧トグルにあった`UnproposedBadge`は不要になった。
+  lost/withdrawn/joined後は一覧へ自然に再登場する。wonは参画前の進行中として除外を継続する
+  （旧トグルにあった`UnproposedBadge`は不要になった。
   除外方式では一覧に残る承認済みは全て未提案のため）
 
 ```json
@@ -252,10 +253,11 @@ PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?,
   案件ID・メンバーIDは画面の検索欄には出さず、詳細画面からの導線用クエリとしてのみ互換維持する
   （2026-08-26 タスクAG）
 - **カード型レイアウトはメンバー詳細の「提案状況」タブ**（2026-08-18 人間指示）: 提案1件=カード1枚。
-  上部に進捗ステッパー6段（提案メール作成中→提案メール送信済み→面談→先方返信待ち→完了→見送り。
-  **取下げは見送り位置まで進めて表示、完了(won)は5段目で止める**。面談段は進行中「N回目面談」・通過済み「面談（実施N回）」）、
+  上部の進捗ステッパーは提案準備中→提案メール送信済→1回目面談済→…→N回目面談済→結果。
+  結果確定前は4段目を「結果」と表示し、確定後は「採用」または「見送り」に置き換える。
+  採用の場合だけ末尾に「参画」を追加する（`joined`）。面談回数は`interviewDoneCount`から動的表示する。
   左に提案情報（提案先・宛先・面談回数・現在ステータス・次回アクション日）、
-  右に更新フォーム（ステータス・次回アクション日・メモ・更新ボタン。差分のみPATCH）。
+  右に更新フォーム（ステータス変更は次のステップと見送りだけ、次回アクション日・メモ・更新ボタン。差分のみPATCH）。
   マッチング控え（match_snapshot）はカード内の折りたたみ表示
 
 ```json
@@ -264,16 +266,19 @@ PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?,
   "sentAt": null, "interviewAt": null, "resultAt": null, "lostReason": null, "memo": "" }
 ```
 
-- status遷移: draft → submitted → interview → won / lost / withdrawn（後戻りは自由。厳密なガードは設けない）
+- 画面からのstatus遷移: draft（提案準備中）→ submitted（提案メール送信済）→ interview（面談回数を加算）→
+  won（採用）→ joined（参画）。最終面談済みでは結果を選択肢に出さず、won（採用）またはlost（見送り）を
+  直接選択する。waiting_reply（結果）は既存データ互換として維持し、表示時は採用/見送りを選択可能。
+  withdrawn（取下げ）は既存データ互換のため読み取りを維持する（2026-08-26 タスクAI）
 - `interviewAt`（日時・null可）: 面談予定。status=interview 時に画面から入力できる想定
-- **includeDone**（2026-08-10 追加）: 未指定/falseなら進行中（won/lost/withdrawn以外）のみ返す。
+- **includeDone**（2026-08-10 追加、2026-08-26参画追加に伴い再定義）: 未指定/falseなら進行中（lost/withdrawn/joined以外）のみ返す。won（採用）はjoined（参画）へ進む途中状態として進行中に含める。
   `includeDone=true` で全件返す。`status` を明示指定した場合はそのstatusのみ（includeDoneより優先）
 - **PATCHの明示null**（2026-08-10 確定）: フィールドが**JSONに存在しない**=更新しない、
   **明示的に null**=クリア（DBをNULLに更新）。対象は interviewAt / nextActionDate / lostReason / memo
   （interviewDoneCount・nextActionDateは2026-08-17の提案改修で追加。2026-08-19契約追記）。
   フロントは面談日時入力を空にしたら `interviewAt: null` を送る
 - 提案一覧のユースケース（2026-08-07 人間イメージ）: **「今どこの案件に誰が提案中で、いつ面談で、
-  ステータスがどうか」を横断で一覧できること**。一覧のデフォルトは進行中（won/lost/withdrawn以外）を
+  ステータスがどうか」を横断で一覧できること**。一覧のデフォルトは進行中（lost/withdrawn/joined以外）を
   status順・interviewAt昇順で表示
 - `matchSnapshot`: 作成時点の candidates 該当行を凍結保存（JSON）
 
@@ -387,7 +392,7 @@ GET /ses/matching-result?projectId=&personnelId=
   外国籍・個人事業主・経験年数=要員側（例: 案件単価が要員希望に届かない→案件側△ハイライト）。
   値が無い側は「-」・status=OK（判定材料なし）でハイライトなし
 - `hasProposal`: **進行中の提案があるときだけtrue**（2026-08-20 人間指示で定義変更。
-  進行中=won/lost/withdrawn以外。提案一覧`includeDone`と同じ線引き）。完了・見送り・取下げ後は
+  進行中=lost/withdrawn/joined以外。提案一覧`includeDone`と同じ線引き）。見送り・取下げ・参画後は
   falseに戻り再提案できる。以前はステータスを問わず提案の有無だけを見ていたため、一度提案すると
   見送られた後も同一案件×同一要員に二度と提案できない不具合があった。阻止したいのは
   「同一案件×同一要員の進行中の二重提案」のみ。候補（staffCandidate）ペアのhasProposalは
