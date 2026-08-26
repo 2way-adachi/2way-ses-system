@@ -38,6 +38,8 @@ PUT  /ses/personnel/{id}                 更新
 ```
 
 - status: `available` / `assigned` / `unavailable`
+- 一覧の `q` は前後空白を除去し、氏名・最寄駅・保有スキルの正規名/別名のいずれかへ部分一致する。
+  3項目はOR、`type`・`status`とはANDで組み合わせる（2026-08-26 タスクAF）
 - BPの場合 `partnerCompany` (string) を追加で持つ
 - **スキル入力の一本化（2026-08-21 タスクX・[設計](skill-input-unification.md)）**:
   `POST/PUT /ses/personnel` の入力から `skills[]` を**廃止**（送っても無視。`personnel_skills` の
@@ -232,7 +234,7 @@ GET /ses/personnel/{id}/matches          要員→適合案件
 ## 提案 proposals
 
 ```
-GET   /ses/proposals?projectId=&personnelId=&status=&includeDone=   ※レスポンスは配列直返し（2026-08-07 確定）
+GET   /ses/proposals?projectId=&personnelId=&personnelName=&status=&includeDone=   ※レスポンスは配列直返し（2026-08-07 確定）
 POST  /ses/proposals                     { projectId, personnelId, proposalText? }
 PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?, interviewDoneCount?,
                                            nextActionDate?, lostReason?, memo? }
@@ -245,7 +247,10 @@ PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?,
   （一覧の「必須技術」「案件開始時期」列の表示用。projectsから導出）
 - **提案管理一覧はモック準拠の閲覧専用リスト**（2026-08-18 上流確認で確定）:
   列は 案件名（＋提案先）／必須技術／案件開始時期／要員名／次回アクション日／進捗（ステータス表示のみ）。
-  行クリックでメンバー詳細の「提案状況」タブへ遷移。一覧上での編集は行わない
+  行クリックでメンバー詳細の「提案状況」タブへ遷移。一覧上での編集は行わない。
+  検索欄はメンバー名（`personnelName` の前後空白除去・部分一致）／ステータス／完了案件表示。
+  案件ID・メンバーIDは画面の検索欄には出さず、詳細画面からの導線用クエリとしてのみ互換維持する
+  （2026-08-26 タスクAG）
 - **カード型レイアウトはメンバー詳細の「提案状況」タブ**（2026-08-18 人間指示）: 提案1件=カード1枚。
   上部に進捗ステッパー6段（提案メール作成中→提案メール送信済み→面談→先方返信待ち→完了→見送り。
   **取下げは見送り位置まで進めて表示、完了(won)は5段目で止める**。面談段は進行中「N回目面談」・通過済み「面談（実施N回）」）、
