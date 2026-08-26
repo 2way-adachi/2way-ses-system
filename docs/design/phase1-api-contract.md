@@ -201,6 +201,23 @@ GET /ses/personnel/{id}/matches          要員→適合案件
 - **鮮度表示（2026-08-25 人間指示）**: `/personnel/{id}/matches` の各行に `mailReceivedAt`
   （string | null。案件の元メール受信日時。手動登録案件=mail_idなしはnull）を含める。
   案件はすぐ埋まるため受信日時を営業判断の鮮度指標として画面に出す
+- **本人向け利用の許可（2026-08-26 E2）**: `GET /ses/personnel/{id}/matches`・
+  `GET /ses/personnel/{id}/skill-gap-summary` は一般ロール（manage_userの非管理者）にも許可する。
+  一般ロールは**自分に紐付くpersonnelIdのみ**アクセスでき、他人のIDは存在有無も伏せて404
+  （`GET /ses/personnel/{id}`と同じ本人スコープの作法。SesScopeGuard）
+  - `GET /ses/personnel/{id}/matches` は一般ロールアクセス時、**応答の型自体が変わる**
+    （nullで隠すのではなく、判断系フィールドを持たない別の型で返す）:
+    `{items:[{project, score, skillScore, conditionFactor, conditionChecks, matchedSkills,
+    missingSkills, reason, duplicateCount, mailReceivedAt, unitPriceMax}], total}`
+    （管理者向けの行から `matchingId`/`matchingStatus`/`rejectReason`/`memo`/`decidedAt`/
+    `hasProposal` を除いたサブセット。承認/見送り状態・見送り理由・営業メモ・判断日時・提案有無は
+    「営業の内部判断が本人に見えると軋轢の元」となるため一般ロールには一切返さない。実装は
+    `SesProjectMatchSelfView`/`SesMatchesSelfResponse`。管理者は従来どおり`SesMatchesResponse`）
+  - `status` クエリパラメータは**一般ロールでは常に無視する**（絞り込みを適用しない）。
+    出力フィールドを隠すだけでは `status=rejected` 等を指定して結果の有無を見ることで
+    判断状態を間接的に推測できてしまうため、絞り込み自体を効かせない
+  - `GET /ses/personnel/{id}/skill-gap-summary` は判断系フィールドを持たない集計のため、
+    一般ロールでも管理者と同一の応答形（本人スコープの404判定のみ追加）
 
 ## 提案 proposals
 
