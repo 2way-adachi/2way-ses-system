@@ -191,13 +191,17 @@ GET /ses/personnel/{id}/matches          要員→適合案件
 - **不足スキル集計（2026-08-25 人間指示・推奨最小構成で実装）**: `GET /ses/personnel/{id}/skill-gap-summary`。
   母集団は「fresh open案件×共通スキル1件以上」で **NG除外なし**（進めない理由を数えるのが目的）。
   必須スキル（project_skills.required）のうち未保有をスキル別に集計し、
-  `{items:[{skillId, skillName, projectCount, bandCounts:{under60,from60to79,over80,unknown}, fullRemoteCount}]}`
+  `{items:[{skillId, skillName, description, projectCount, bandCounts:{under60,from60to79,over80,unknown}, fullRemoteCount}]}`
   （単価帯は unit_price_max 基準 60万未満/60〜79万/80万以上/null、projectCount降順・上位20件）を返す。
   画面はメンバー詳細マッチングタブ上部の小パネルに上位5件表示。
   **`maxPrice`は2026-08-25 A3で廃止し`fullRemoteCount`（そのスキルを必須とする案件のうち
   remoteType=full_remote(0)の件数）に置き換えた**（「このスキルがあれば〜円/フルリモート案件が開ける」
   というベネフィット提示への見せ方変更に伴う。bandCountsは維持するがフロント表示はover80のみ使用。
   print-preview-tasks.md A3参照）
+  - **`description`（string | null。2026-08-26 E6追加）**: `skills.description`（E6のスキル概要）を
+    そのまま返す。未生成のスキルはnull。フロントは不足スキル分析カードのスキル名ツールチップに使う。
+    一般ロール（E2の本人ビュー）にも同一値を返す（概要は営業の内部判断情報ではなく公開情報のため、
+    E2の判断系フィールド遮蔽の対象外）
 - **鮮度表示（2026-08-25 人間指示）**: `/personnel/{id}/matches` の各行に `mailReceivedAt`
   （string | null。案件の元メール受信日時。手動登録案件=mail_idなしはnull）を含める。
   案件はすぐ埋まるため受信日時を営業判断の鮮度指標として画面に出す
@@ -216,6 +220,12 @@ GET /ses/personnel/{id}/matches          要員→適合案件
   - `status` クエリパラメータは**一般ロールでは常に無視する**（絞り込みを適用しない）。
     出力フィールドを隠すだけでは `status=rejected` 等を指定して結果の有無を見ることで
     判断状態を間接的に推測できてしまうため、絞り込み自体を効かせない
+  - **一般ロールは進行中の提案がある組（hasProposal=true）も除外せず全件返す**（2026-08-26
+    追加の人間決定）。管理者は従来どおり既定除外（本セクション冒頭の「進行中の提案がある組は
+    常に一覧から除外する」）を維持する。hasProposal自体が一般ロール向け応答に含まれない
+    （上記の別View方式）ため、全件見せても提案の有無という判断情報は漏れないという判断。
+    実装は`MatchingFillArgData.includeProposed`（一般ロール時にController側でtrue指定。
+    `GET /ses/matchings`・管理者の`/personnel/{id}/matches`はこのフラグを見ない＝常に除外のまま）
   - `GET /ses/personnel/{id}/skill-gap-summary` は判断系フィールドを持たない集計のため、
     一般ロールでも管理者と同一の応答形（本人スコープの404判定のみ追加）
 
@@ -297,6 +307,32 @@ GET /ses/skills?q=                       タグ入力のサジェスト用（ali
     Lavender `skillMasterApi.ts` の `res.data.items` 前提と食い違い、関連スキル承認タブが
     白画面になっていた。`SesPendingSkillRelationListView` で修正済み）
   - `POST /ses/skill-master/relations/generate` の応答は `{ "generated": n, "skipped": n }`
+
+- **スキル概要（3行以内の説明。2026-08-26 E6）**: 営業の商談支援・メンバー本人の学習アクション支援
+  （E2の不足スキル分析と相乗り）・トリアージ誤登録防止（多義語・紛らわしい略語の再発防止）が目的。
+  ```
+  GET   /ses/skill-master/skills                      応答に description を追加（後方互換。未生成はnull）
+  PATCH /ses/skill-master/skills/{id}                  { description }（人間編集。空文字/未指定はnullとして保存）
+  POST  /ses/skill-master/description-backfill         一括生成（同期実行。body無し）
+  ```
+  - DDL: `skills.description` TEXT NULL を追加（`docs/ddl/schema-ses.sql`。devDB適用は別途人間判断）
+  - 生成: gpt-5.6-luna相当。プロンプトは「SES案件の文脈で、非エンジニアの営業にも分かる3行以内」＋
+    その語が登場した実案件メールの文脈行（project_skills→projects→mailsを辿り最大3本。正規名・別名の
+    どちらかを含む行）を添えて背景補完する（多義語の曖昧性解消・ニッチ語のハルシネーション抑制）
+  - `POST /ses/skill-master/description-backfill` は **description IS NULLの登録済みスキルのみ**が対象
+    （`all`のような全件再生成トグルは持たない）。応答は
+    `{ "targetSkills": n, "processedSkills": n, "failedSkills": n }`（skill-years-backfillと同じ
+    対象/処理/失敗件数の作法）。実行中の重ね実行は400。LLM回復不能失敗（abort）は500・空ボディ
+    （relations/generateと同方針）
+  - **登録decision（ACTION_REGISTER）成功後に自動生成1コール**（2026-08-26実装確定）。
+    `POST /ses/skill-master/decision` のレスポンス自体は変わらないが、内部でdecision確定後に
+    `SkillDescriptionService.generateForNewSkill()` を呼ぶ。**失敗しても登録自体は成功させる**
+    （概要はNULLのままdescription-backfillで後から埋められる。人間が既に概要を編集済み＝NULL以外の
+    場合は上書きしない、という判断もここに含む）
+  - LLM生成は初期値扱いで、`PATCH /ses/skill-master/skills/{id}` からマスタ一覧の人間が編集・上書きできる
+  - 表示先: マスタ一覧＋不足スキル分析・マッチング内訳のツールチップ（Lavender側実装）
+  - 対象は登録済みスキルのみ（未知語側は既存のexampleProjects/similarSkillsで足りるため対象外）
+  - マッチングロジックへの影響なし（表示専用のフィールド）
 
 ## マッチング結果画面（2026-08-19 決定#30）
 
