@@ -274,7 +274,7 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
 .member-tabs button:hover{background:var(--bg)}
 .timeline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .timeline .step{margin:0}
-.proposal-stepper{display:grid;grid-template-columns:repeat(6,1fr);margin:10px 0 18px;overflow:hidden}
+.proposal-stepper{display:grid;grid-template-columns:repeat(var(--proposal-step-count,5),minmax(120px,1fr));margin:10px 0 18px;overflow-x:auto}
 .proposal-step{position:relative;text-align:center;padding-top:36px;font-size:12px;color:var(--fg-muted);min-width:0}
 .proposal-step:before{content:"";position:absolute;top:15px;left:0;right:0;height:1px;background:#bdbdbd}
 .proposal-step:first-child:before{left:50%}.proposal-step:last-child:before{right:50%}
@@ -591,8 +591,11 @@ const MATCHINGS = [
 ];
 
 const PROPOSALS = [
-  {id:1, matchingId:2, status:"提案メール送信済み", nextAction:"2026/08/11", destination:"Webサービス企業 採用担当", mail:"ses-front@example.co.jp", interviews:2, memo:"提案メール送信済み。先方から日程候補待ち。"},
-  {id:2, matchingId:5, status:"1回目面談", nextAction:"2026/08/12", destination:"製造業エンド 情シス部", mail:"iot-platform@example.co.jp", interviews:3, memo:"1回目面談調整済み。インフラ設計経験を中心に確認予定。"}
+  {id:1, matchingId:2, status:"submitted", interviewDoneCount:0, nextAction:"2026/08/11", destination:"Webサービス企業 採用担当", mail:"ses-front@example.co.jp", interviews:2, memo:"提案メール送信済み。先方から日程候補待ち。"},
+  {id:2, matchingId:5, status:"interview", interviewDoneCount:1, nextAction:"2026/08/12", destination:"製造業エンド 情シス部", mail:"iot-platform@example.co.jp", interviews:3, memo:"1回目面談済み。インフラ設計経験を中心に確認予定。"},
+  {id:3, matchingId:1, status:"won", interviewDoneCount:2, nextAction:"2026/08/20", destination:"金融系SIer 営業担当", mail:"finance@example.co.jp", interviews:2, memo:"採用連絡受領済み。参画手続きを進める。"},
+  {id:4, matchingId:3, status:"lost", interviewDoneCount:2, nextAction:"", destination:"物流系事業会社 採用担当", mail:"logistics@example.co.jp", interviews:2, memo:"最終面談後に見送り。"},
+  {id:5, matchingId:4, status:"joined", interviewDoneCount:1, nextAction:"", destination:"医療系スタートアップ 採用担当", mail:"medical@example.co.jp", interviews:1, memo:"参画済み。"}
 ];
 
 /* =========================================================
@@ -724,9 +727,39 @@ function statusChip(st){
 }
 function proposalStatusChip(st){
   if(st.includes("面談")) return `<span class="chip pri">${esc(st)}</span>`;
-  if(st.includes("完了")) return `<span class="chip ok">${esc(st)}</span>`;
+  if(st.includes("採用") || st.includes("参画")) return `<span class="chip ok">${esc(st)}</span>`;
   if(st.includes("見送り")) return `<span class="chip warn">${esc(st)}</span>`;
   return `<span class="chip">${esc(st)}</span>`;
+}
+const PROPOSAL_STATUS_LABEL = {
+  draft:"提案準備中", submitted:"提案メール送信済", interview:"面談済", waiting_reply:"結果",
+  won:"採用", lost:"見送り", withdrawn:"取下げ", joined:"参画"
+};
+function proposalDisplayStatus(p){
+  return p.status === "interview" ? `${p.interviewDoneCount || 0}回目面談済` : (PROPOSAL_STATUS_LABEL[p.status] || p.status);
+}
+function proposalNextTransition(p){
+  if(p.status === "draft") return {status:"submitted",label:"提案メール送信済"};
+  if(p.status === "submitted") return {status:"interview",interviewDoneCount:1,label:"1回目面談済"};
+  if(p.status === "interview" && p.interviewDoneCount < Math.max(1,p.interviews || 1)){
+    const count = p.interviewDoneCount + 1;
+    return {status:"interview",interviewDoneCount:count,label:`${count}回目面談済`};
+  }
+  if(p.status === "interview" || p.status === "waiting_reply") return {status:"won",label:"採用"};
+  if(p.status === "won") return {status:"joined",label:"参画"};
+  return null;
+}
+function proposalProgress(p){
+  const interviewCount = Math.max(1,p.interviews || 1,p.interviewDoneCount || 0);
+  const resultLabel = p.status === "won" || p.status === "joined" ? "採用" : p.status === "lost" || p.status === "withdrawn" ? "見送り" : "結果";
+  const steps = ["提案準備中","提案メール送信済",...Array.from({length:interviewCount},(_,i)=>`${i+1}回目面談済`),resultLabel];
+  if(p.status === "won" || p.status === "joined") steps.push("参画");
+  const resultIndex = 2 + interviewCount;
+  let active = p.status === "submitted" ? 1 : 0;
+  if(p.status === "interview") active = 1 + Math.min(interviewCount,Math.max(1,p.interviewDoneCount || 0));
+  if(["waiting_reply","won","lost","withdrawn"].includes(p.status)) active = resultIndex;
+  if(p.status === "joined") active = resultIndex + 1;
+  return {steps,active};
 }
 function projectOf(id){ return PROJECTS.find(p=>p.id===id); }
 function staffOf(id){ return SHEETS.find(s=>s.id===id); }
@@ -1247,6 +1280,7 @@ function screenSkillMaster(){
 }
 
 let matchingFilter={status:"",unproposed:false,projectTitle:"",personName:"",scoreMin:"",subjectType:"",detailsOpen:false,page:1,size:100};
+let matchingBackTarget={type:"list",memberId:null};
 function screenMatchingList(){
   const f=matchingFilter;
   const rows=MATCHINGS.map(matchingView).filter(r=>{
@@ -1265,7 +1299,7 @@ function screenMatchingList(){
     <div class="field"><label>案件名</label><input class="ctl" id="matchProjectTitle" value="${esc(f.projectTitle)}" placeholder="例: 基幹システム"></div><div class="field"><label>メンバー／候補名</label><input class="ctl" id="matchPersonName" value="${esc(f.personName)}" placeholder="例: 山田、S.T"></div><div class="field"><label>点数の下限</label><input class="ctl" id="matchScoreMin" type="number" min="0" max="100" value="${esc(f.scoreMin)}" placeholder="0〜100"></div><div class="field"><label>対象</label><select class="ctl" id="matchSubjectType"><option value="">すべて</option><option value="member"${f.subjectType==="member"?" selected":""}>メンバーのみ</option><option value="candidate"${f.subjectType==="candidate"?" selected":""}>要員候補のみ</option></select></div>
   </div></div></div></div>
   <div class="card"><div class="bd flush"><div class="tbl-scroll"><table class="tbl"><thead><tr><th>案件名</th><th>メンバー名</th><th>点数</th><th>一致スキル</th><th>不足スキル</th><th>状態</th><th>操作</th></tr></thead><tbody>
-    ${pageRows.map(r=>{const candidate=[4,6].includes(r.id),projectMail=PROJECT_MAILS.find(m=>m.id===r.project.id),candidateMail=STAFF_MAILS[candidate?(r.id===4?2:0):1];return `<tr data-matching-result="${r.id}"><td><strong>${esc(r.project.name)}</strong>${duplicateBadge(projectMail?.duplicateCount||1)}</td><td>${esc(candidate?r.staffInitial:(r.staff.name || r.staffInitial))}${candidate?' <span class="chip warn">候補</span>':""}${candidate?duplicateBadge(candidateMail?.duplicateCount||1):""}</td><td class="num">${r.score}点</td><td><div class="taglist">${r.staff.skills.filter(k=>r.project.required.includes(k.name)).slice(0,4).map(k=>`<span class="tag">${esc(k.name)} ${months2y(k.months)}</span>`).join("") || "—"}</div></td><td><div class="taglist">${r.project.required.filter(skill=>!r.staff.skills.some(k=>k.name===skill)).map(x=>`<span class="tag gray">${esc(x)}</span>`).join("") || "—"}</div></td><td>${r.approved?'<span class="chip ok">承認済み</span><span class="chip warn">未提案</span>':'<span class="chip">未対応</span>'}</td><td><button class="btn sm" data-match-dismiss="1">見送り</button></td></tr>`}).join("")||'<tr><td colspan="7"><div class="empty">該当するマッチングがありません</div></td></tr>'}
+    ${pageRows.map(r=>{const candidate=[4,6].includes(r.id),projectMail=PROJECT_MAILS.find(m=>m.id===r.project.id),candidateMail=STAFF_MAILS[candidate?(r.id===4?2:0):1];return `<tr data-matching-result="${r.id}" data-matching-origin="list"><td><strong>${esc(r.project.name)}</strong>${duplicateBadge(projectMail?.duplicateCount||1)}</td><td>${esc(candidate?r.staffInitial:(r.staff.name || r.staffInitial))}${candidate?' <span class="chip warn">候補</span>':""}${candidate?duplicateBadge(candidateMail?.duplicateCount||1):""}</td><td class="num">${r.score}点</td><td><div class="taglist">${r.staff.skills.filter(k=>r.project.required.includes(k.name)).slice(0,4).map(k=>`<span class="tag">${esc(k.name)} ${months2y(k.months)}</span>`).join("") || "—"}</div></td><td><div class="taglist">${r.project.required.filter(skill=>!r.staff.skills.some(k=>k.name===skill)).map(x=>`<span class="tag gray">${esc(x)}</span>`).join("") || "—"}</div></td><td>${r.approved?'<span class="chip ok">承認済み</span><span class="chip warn">未提案</span>':'<span class="chip">未対応</span>'}</td><td><button class="btn sm" data-match-dismiss="1">見送り</button></td></tr>`}).join("")||'<tr><td colspan="7"><div class="empty">該当するマッチングがありません</div></td></tr>'}
   </tbody></table></div>${rows.length?pagerHtml(rows.length,f,"matching"):""}</div></div>`;
   $("#matchStatus").onchange=e=>{f.status=e.target.value;f.page=1;screenMatchingList();};
   $("#matchUnproposed").onchange=e=>{f.unproposed=e.target.checked;if(f.unproposed)f.status="";f.page=1;screenMatchingList();};
@@ -1279,14 +1313,14 @@ let proposalFilter = {personnelName:"",status:"",showDone:false};
 function screenProposalList(){
   const rows = PROPOSALS.map(proposalView).filter(r=>{
     if(proposalFilter.personnelName && !(r.staff.name || r.staffInitial || "").includes(proposalFilter.personnelName.trim())) return false;
-    return !proposalFilter.status || r.status===proposalFilter.status || r.status.includes(proposalFilter.status);
-  }).filter(r=>proposalFilter.showDone || proposalFilter.status || !["完了","見送り","取下げ"].includes(r.status));
+    return !proposalFilter.status || r.status===proposalFilter.status;
+  }).filter(r=>proposalFilter.showDone || proposalFilter.status || !["lost","withdrawn","joined"].includes(r.status));
   main.innerHTML = `
   ${crumb([{label:"ホーム"},{label:"提案"}])}
   <div class="pagehead"><div><h1>提案</h1></div></div>
-  <div class="card"><div class="bd"><div class="filters"><div class="field"><label>メンバー名</label><input class="ctl" id="proposalPersonnelName" value="${esc(proposalFilter.personnelName)}" placeholder="例: 山田"></div><div class="field"><label>ステータス</label><select class="ctl" id="proposalStatus"><option value="">すべて（進行中のみ表示）</option>${["下書き","提案メール送信済み","面談","先方返信待ち","完了","見送り","取下げ"].map(s=>`<option${proposalFilter.status===s?" selected":""}>${s}</option>`).join("")}</select></div><label style="display:flex;gap:6px;align-items:center;margin:0 0 4px"><input type="checkbox" id="proposalDone" ${proposalFilter.showDone?"checked":""} ${proposalFilter.status?"disabled":""}>完了案件も表示</label></div></div></div>
+  <div class="card"><div class="bd"><div class="filters"><div class="field"><label>メンバー名</label><input class="ctl" id="proposalPersonnelName" value="${esc(proposalFilter.personnelName)}" placeholder="例: 山田"></div><div class="field"><label>ステータス</label><select class="ctl" id="proposalStatus"><option value="">すべて（進行中のみ表示）</option>${Object.entries(PROPOSAL_STATUS_LABEL).map(([value,label])=>`<option value="${value}"${proposalFilter.status===value?" selected":""}>${label}</option>`).join("")}</select></div><label style="display:flex;gap:6px;align-items:center;margin:0 0 4px"><input type="checkbox" id="proposalDone" ${proposalFilter.showDone?"checked":""} ${proposalFilter.status?"disabled":""}>完了案件も表示</label></div></div></div>
   <div class="card"><div class="bd flush"><div class="tbl-scroll"><table class="tbl"><thead><tr><th>案件名</th><th>必須技術</th><th>案件開始時期</th><th>メンバー名</th><th>次回アクション日</th><th>進捗</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr data-proposal-open="${r.staff.id}"><td><strong>${esc(r.project.name)}</strong><div class="ses-sub">${esc(r.destination)}</div></td><td>${esc(techText(r.project))}</td><td>${esc(r.project.start)}</td><td>${esc(r.staff.name || r.staffInitial)}</td><td>${esc(String(r.nextAction).replaceAll("/","-"))}</td><td>${esc(r.status.includes("面談")?`面談（${(r.status.match(/\d+/)||["0"])[0]}/${r.interviews}回目）`:r.status)}</td></tr>`).join("") || '<tr><td colspan="6"><div class="empty">該当する提案がありません</div></td></tr>'}
+    ${rows.map(r=>`<tr data-proposal-open="${r.staff.id}"><td><strong>${esc(r.project.name)}</strong><div class="ses-sub">${esc(r.destination)}</div></td><td>${esc(techText(r.project))}</td><td>${esc(r.project.start)}</td><td>${esc(r.staff.name || r.staffInitial)}</td><td>${esc(String(r.nextAction).replaceAll("/","-"))||"—"}</td><td>${proposalStatusChip(proposalDisplayStatus(r))}</td></tr>`).join("") || '<tr><td colspan="6"><div class="empty">該当する提案がありません</div></td></tr>'}
   </tbody></table></div></div></div>`;
   $("#proposalPersonnelName").oninput=e=>{proposalFilter.personnelName=e.target.value;screenProposalList();};
   $("#proposalStatus").onchange=e=>{proposalFilter.status=e.target.value;screenProposalList();};
@@ -1333,9 +1367,10 @@ function matchingMailFrame(title,mails,kind){
   return `<div class="mail-frame"><div class="mail-frame-title">${title}</div><div class="mail-frame-scroll">${mails.map((m,i)=>`<label class="mail-choice${i===0?" selected":""}"><input type="radio" name="${kind}Mail"${i===0?" checked":""}><span><strong>${esc((m.from||"").split("@")[0]||"（送信元不明）")}</strong><span class="sub" style="display:block">${esc(m.from||"")}</span><span class="mail-subject" style="display:block">${esc(kind==="project"?m.title:`【要員情報】${m.initial} / ${m.skills}`)}</span><span class="sub">受信: ${esc(m.received||"")}</span>　<button type="button" class="linklike" ${kind==="project"?`data-project-mail-open="${m.id}"`:`data-staff-mail-open="${m.id}"`}>${title}詳細</button></span></label>`).join("")}</div></div>`;
 }
 
-function screenMatchingResult(id){
+function screenMatchingResult(id, origin="list", memberId=null){
   const r = matchingView(MATCHINGS.find(m=>m.id===id));
   if(!r){ screenMatchingList(); return; }
+  matchingBackTarget={type:origin==="member"?"member":"list",memberId};
   const matched = r.project.required.filter(skill=>r.staff.skills.some(k=>k.name===skill));
   const missing = r.project.required.filter(skill=>!matched.includes(skill));
   const conditionRows = [
@@ -1349,7 +1384,7 @@ function screenMatchingResult(id){
   const staffMails=[staffMailBase,...STAFF_MAILS].filter((m,i,a)=>m&&a.findIndex(x=>x.id===m.id)===i).slice(0,Math.max(2,staffMailBase?.duplicateCount||1));
   main.innerHTML = `
   ${crumb([{label:"ホーム"},{label:"マッチング一覧",nav:"matching"},{label:`${r.project.name} × ${r.staff.name}`}])}
-  <div class="pagehead"><div><h1>${esc(r.project.name)} × ${esc(candidate?r.staffInitial:r.staff.name)} ${candidate?'<span class="chip warn">候補</span>':""}</h1><div class="acts" style="justify-content:flex-start;margin-top:8px"><strong style="font-size:20px">${r.score}点</strong><span class="sub">（スキル評価 ${Math.min(100,r.score+4)}点 × 条件係数 0.96）</span>${r.approved?'<span class="chip ok">承認済み</span><span class="chip warn">未提案</span>':'<span class="chip">未対応</span>'}</div></div></div>
+  <div class="pagehead"><div><h1>${esc(r.project.name)} × ${esc(candidate?r.staffInitial:r.staff.name)} ${candidate?'<span class="chip warn">候補</span>':""}</h1><div class="acts" style="justify-content:flex-start;margin-top:8px"><strong style="font-size:20px">${r.score}点</strong><span class="sub">（スキル評価 ${Math.min(100,r.score+4)}点 × 条件係数 0.96）</span>${r.approved?'<span class="chip ok">承認済み</span><span class="chip warn">未提案</span>':'<span class="chip">未対応</span>'}</div></div><div class="acts"><button class="btn" data-matching-back="1">戻る</button></div></div>
   <div style="display:grid;grid-template-columns:minmax(0,7fr) minmax(340px,5fr);gap:16px" class="mail-detail-grid">
     <div><h2 style="font-size:16px">対比表</h2><div class="card"><div class="bd flush"><table class="tbl comparison-table"><thead><tr><th>区分</th><th>項目</th><th>案件</th><th>要員</th></tr></thead><tbody>
       ${r.project.required.map((skill,i)=>{const k=r.staff.skills.find(x=>x.name===skill);return `<tr style="cursor:default">${i===0?`<td class="comparison-group skills" rowspan="${r.project.required.length}">スキル</td>`:""}<td class="comparison-subitem">${esc(skill)} <span class="chip pri">必須</span></td><td>必須</td><td${k?"":" style=\"background:#fff4e5\""}>${k?esc(months2y(k.months)):'<span class="chip warn">不足</span>'}</td></tr>`}).join("")}
@@ -1383,7 +1418,7 @@ function screenDetail(id, tab="info"){
       <div class="bd flush">
         <table class="tbl">
           <thead><tr><th>案件名</th><th>点数</th><th>一致スキル</th><th>不足スキル</th><th>状態</th><th>操作</th></tr></thead>
-          <tbody>${rows.map(r=>`<tr data-matching-result="${r.id}">
+          <tbody>${rows.map(r=>`<tr data-matching-result="${r.id}" data-matching-origin="member" data-matching-member="${s.id}">
             <td><strong>${esc(r.project.name)}</strong></td>
             <td class="num">${r.score}点</td>
             <td><div class="taglist">${r.project.required.filter(x=>r.staff.skills.some(k=>k.name===x)).map(x=>`<span class="tag">${esc(x)}</span>`).join("")||"—"}</div></td>
@@ -1404,20 +1439,20 @@ function screenDetail(id, tab="info"){
     ${memberDetailHeader(s)}
     ${tabs}
     ${rows.map(r=>{
-      const status = r.status.includes("面談") ? "interview" : r.status.includes("返信") ? "waiting_reply" : r.status.includes("完了") ? "won" : r.status.includes("見送り") ? "lost" : r.status.includes("送信済み") ? "submitted" : "draft";
-      const statuses = ["draft","submitted","interview","waiting_reply","won","lost"];
-      const active = statuses.indexOf(status);
-      const doneCount = +(String(r.status).match(/(\d+)回目/)||[])[1] || 0;
-      const labels = ["提案メール作成中","提案メール送信済み",`${doneCount+1}回目面談`,"先方返信待ち","完了","見送り"];
-      const currentLabel = status==="interview"?"面談":status==="waiting_reply"?"先方返信待ち":status==="won"?"完了":status==="lost"?"見送り":status==="submitted"?"提案メール送信済み":"下書き";
+      const status = r.status;
+      const doneCount = r.interviewDoneCount || 0;
+      const currentLabel = proposalDisplayStatus(r);
+      const progress = proposalProgress(r);
+      const next = proposalNextTransition(r);
+      const terminal = ["lost","withdrawn","joined"].includes(status);
       const nextDate = String(r.nextAction||"").replaceAll("/","-");
       return `
       <div class="card">
         <div class="hd"><h2>${esc(r.project.name)}</h2></div>
         <div class="bd">
           <h3 style="font-size:14px;margin:0">提案進捗</h3>
-          <div class="proposal-stepper">
-            ${labels.map((label,i)=>`<div class="proposal-step ${i<active?"done":i===active?"active":""}"><span class="circle">${i<active?"✓":i+1}</span>${esc(label)}</div>`).join("")}
+          <div class="proposal-stepper" style="--proposal-step-count:${progress.steps.length}">
+            ${progress.steps.map((label,i)=>`<div class="proposal-step ${i<progress.active?"done":i===progress.active?"active":""}"><span class="circle">${i<progress.active?"✓":i+1}</span>${esc(label)}</div>`).join("")}
           </div>
           <div class="proposal-detail-grid">
             <div class="proposal-info">
@@ -1427,12 +1462,12 @@ function screenDetail(id, tab="info"){
             <div data-proposal-form="${r.id}">
               <h3 style="font-size:14px;margin:0 0 12px">更新内容</h3>
               <div class="proposal-form">
-                <div class="field"><label>ステータス</label><select class="ctl" data-proposal-input><option${status==="draft"?" selected":""}>下書き</option><option${status==="submitted"?" selected":""}>提案メール送信済み</option><option${status==="interview"?" selected":""}>面談</option><option${status==="waiting_reply"?" selected":""}>先方返信待ち</option><option${status==="won"?" selected":""}>完了</option><option${status==="lost"?" selected":""}>見送り</option><option>取下げ</option></select></div>
+                <div class="field"><label>ステータス</label><select class="ctl" data-proposal-transition data-proposal-input ${terminal?"disabled":""}><option value="" selected disabled>${esc(currentLabel)}</option>${next?`<option value="next">${esc(next.label)}</option>`:""}${terminal?"":'<option value="lost">見送り</option>'}</select></div>
                 ${status==="interview"?`<div class="field"><label>面談日時</label><input class="ctl" type="datetime-local" value="2026-08-18T17:31" data-proposal-input></div>`:""}
-                ${status==="interview"||status==="waiting_reply"?`<div class="field"><label>実施済み面談回数</label><input class="ctl" type="number" min="0" value="${doneCount}" data-proposal-input></div>`:""}
-                <div class="field"><label>次回アクション日</label><input class="ctl" type="date" value="${esc(nextDate)}" data-proposal-input></div>
-                <div class="field"><label>メモ</label><textarea class="ctl" rows="3" data-proposal-input>${esc(r.memo)}</textarea></div>
-                <div class="acts" style="justify-content:flex-end"><button class="btn primary" data-proposal-update="${r.id}" disabled>更新する</button></div>
+                ${status==="interview"||status==="waiting_reply"?`<div class="field"><label>実施済み面談回数</label><input class="ctl" type="number" min="0" value="${doneCount}" data-proposal-count data-proposal-input></div>`:""}
+                ${terminal?"":`<div class="field"><label>次回アクション日</label><input class="ctl" type="date" value="${esc(nextDate)}" data-proposal-next-date data-proposal-input></div>`}
+                <div class="field"><label>メモ</label><textarea class="ctl" rows="3" data-proposal-memo data-proposal-input>${esc(r.memo)}</textarea></div>
+                <div class="acts" style="justify-content:flex-end"><button class="btn primary" data-proposal-update="${r.id}" data-proposal-member="${r.staff.id}" disabled>更新する</button></div>
               </div>
             </div>
           </div>
@@ -1793,7 +1828,7 @@ function go(nav){
 }
 
 document.addEventListener("click", ev => {
-  const t = ev.target.closest("[data-nav],[data-open],[data-edit],[data-new],[data-dup],[data-pdf],[data-match-open],[data-proposal-open],[data-member-tab],[data-proposal-create],[data-match-dismiss],[data-project-mail-open],[data-staff-mail-open],[data-member-new],[data-member-edit],[data-member-save],[data-mail-save],[data-matching-result],[data-mail-import-run],[data-mail-history],[data-dialog-close],[data-unknown-term],[data-skill-restore],[data-skill-decision-save],[data-skill-merge],[data-relink],[data-proposal-update],[data-snapshot-toggle],[data-webmail-open],[data-mail-body-toggle]");
+  const t = ev.target.closest("[data-nav],[data-open],[data-edit],[data-new],[data-dup],[data-pdf],[data-match-open],[data-proposal-open],[data-member-tab],[data-proposal-create],[data-match-dismiss],[data-project-mail-open],[data-staff-mail-open],[data-member-new],[data-member-edit],[data-member-save],[data-mail-save],[data-matching-result],[data-matching-back],[data-mail-import-run],[data-mail-history],[data-dialog-close],[data-unknown-term],[data-skill-restore],[data-skill-decision-save],[data-skill-merge],[data-relink],[data-proposal-update],[data-snapshot-toggle],[data-webmail-open],[data-mail-body-toggle]");
   if(!t) return;
   if(t.dataset.nav){ ev.preventDefault(); go(t.dataset.nav); return; }
   ev.preventDefault();
@@ -1808,7 +1843,26 @@ document.addEventListener("click", ev => {
   if(t.dataset.skillDecisionSave){ toast(`${t.dataset.skillDecisionSave}しました（モック）`); t.closest(".dialog-backdrop")?.remove(); return; }
   if(t.dataset.skillMerge){ toast(`${t.dataset.skillMerge}の統合先を選択します（モック）`); return; }
   if(t.dataset.relink){ toast("案件・要員のスキルを再照合しました（モック）"); return; }
-  if(t.dataset.proposalUpdate){ toast("提案情報を更新しました（モック）"); t.disabled=true; return; }
+  if(t.dataset.proposalUpdate){
+    const proposal=PROPOSALS.find(p=>p.id===+t.dataset.proposalUpdate), form=t.closest("[data-proposal-form]");
+    if(proposal && form){
+      const count=form.querySelector("[data-proposal-count]");
+      if(count) proposal.interviewDoneCount=Math.max(0,Number(count.value)||0);
+      const transition=form.querySelector("[data-proposal-transition]")?.value;
+      if(transition==="lost") proposal.status="lost";
+      if(transition==="next"){
+        const next=proposalNextTransition(proposal);
+        if(next){ proposal.status=next.status; if(next.interviewDoneCount!==undefined) proposal.interviewDoneCount=next.interviewDoneCount; }
+      }
+      const nextDate=form.querySelector("[data-proposal-next-date]");
+      if(nextDate) proposal.nextAction=nextDate.value;
+      const memo=form.querySelector("[data-proposal-memo]");
+      if(memo) proposal.memo=memo.value;
+    }
+    toast("提案情報を更新しました（モック）");
+    screenDetail(+t.dataset.proposalMember,"proposal");
+    return;
+  }
   if(t.dataset.snapshotToggle){ const box=document.querySelector(`[data-snapshot="${t.dataset.snapshotToggle}"]`); box?.classList.toggle("hidden"); return; }
   if(t.dataset.projectMailOpen){ screenProjectMailDetail(+t.dataset.projectMailOpen); return; }
   if(t.dataset.staffMailOpen){ screenStaffMailDetail(+t.dataset.staffMailOpen); return; }
@@ -1816,7 +1870,12 @@ document.addEventListener("click", ev => {
   if(t.dataset.memberEdit){ screenMemberEdit(+t.dataset.memberEdit); return; }
   if(t.dataset.memberSave){ toast("メンバー情報を保存しました（モック）"); setTimeout(()=>go("members"),450); return; }
   if(t.dataset.mailSave){ toast(`${t.dataset.mailSave}の抽出結果を保存しました（モック）`); return; }
-  if(t.dataset.matchingResult){ screenMatchingResult(+t.dataset.matchingResult); return; }
+  if(t.dataset.matchingBack){
+    if(matchingBackTarget.type==="member"&&matchingBackTarget.memberId) screenDetail(matchingBackTarget.memberId,"matching");
+    else go("matching");
+    return;
+  }
+  if(t.dataset.matchingResult){ screenMatchingResult(+t.dataset.matchingResult,t.dataset.matchingOrigin||"list",t.dataset.matchingMember?+t.dataset.matchingMember:null); return; }
   if(t.dataset.memberTab){ screenDetail(+t.dataset.memberId, t.dataset.memberTab); return; }
   if(t.dataset.matchOpen){ screenDetail(+t.dataset.matchOpen, "matching"); return; }
   if(t.dataset.proposalOpen){ screenDetail(+t.dataset.proposalOpen, "proposal"); return; }
