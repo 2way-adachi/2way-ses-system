@@ -55,7 +55,7 @@ SES
 | 要員メール一覧 | `/staff-mail` | 抽出要員候補一覧、検索、取込実行・履歴 |
 | 要員メール詳細 | `/staff-mail/:id` | 抽出内容と原文の確認・編集 |
 | メンバー一覧 | `/member` | メンバー検索・一覧 |
-| メンバー新規登録 | `/member/new` | 基本情報とスキルの登録 |
+| メンバー新規登録 | `/member/new` | 基本情報とスキルの登録（既存スキルシートの紐付けは行わない） |
 | メンバー詳細 | `/member/:id?tab=info\|skill-sheet\|matching\|proposal` | 4タブの統合詳細 |
 | メンバー編集 | `/member/:id/edit` | 基本情報、スキル、シート紐付けの編集 |
 | スキルシート新規 | `/member/:memberId/skill-sheet/new` | 対象メンバーのシート作成 |
