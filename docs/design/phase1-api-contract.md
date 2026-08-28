@@ -138,6 +138,8 @@ GET /ses/personnel/{id}/matches          要員→適合案件
   - `desiredSkillBonus = min(0.10, 希望スキルの必須一致数 * 0.03 + 尚可一致数 * 0.01)`
   - 同一スキルが必須・尚可双方にある場合は必須一致だけを数える
   - `skillScore = min(1.0, experienceSkillScore + desiredSkillBonus)`
+  - `score = min(1.0, experienceSkillScore * conditionFactor + desiredSkillBonus)`
+  - 希望加点は条件係数の適用後に加え、経験スキル100点時の上限や条件係数で加点が消えないようにする
   - 希望スキルは経験の一致・不足、要求経験年数の判定には使わない
   - 希望だけが共通するペアも前置フィルタを通して評価する
 - 条件適合は `conditionChecks` に項目別の判定と理由を保持する（9軸。2026-08-18 決定#25・#26／2026-08-19 決定#34）
@@ -199,7 +201,8 @@ GET /ses/personnel/{id}/matches          要員→適合案件
   - `WARNING` 1件: `conditionFactor = 0.90`
   - `WARNING` 2件: `conditionFactor = 0.80`
   - `WARNING` 3件以上: `conditionFactor = 0.70`
-  - `score = skillScore * conditionFactor`
+  - 希望加点なし: `score = experienceSkillScore * conditionFactor`
+  - 希望加点あり: `score = min(1.0, experienceSkillScore * conditionFactor + desiredSkillBonus)`
 - `matchedSkills` は決定#22-Aにより `{name, years|null}` 構造（要員の経験年数を併記。missingSkillsは名前配列のまま）
 - 場所の参考表示用に、候補側refは要員の `nearestStation`・`preferredLocation` を、適合案件側refは案件の
   `location` を含める（`location` 軸の判定結果とは別に、営業判断材料として原文を並記するため）

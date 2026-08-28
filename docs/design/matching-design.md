@@ -31,7 +31,8 @@
   - `price` / `workStyle` / `startDate` / `age`: `OK` / `WARNING` / `NG`
   - `nationality` / `commercialFlow`: `OK` / `NG`
 - `NG` が1件でも含まれる場合はマッチング対象外とする
-- `NG` がない場合、`WARNING` 件数で条件係数を決め、`score = skillScore * conditionFactor` で総合点を算出する
+- `NG` がない場合、`WARNING` 件数で条件係数を決める。希望加点なしは従来どおり
+  `score = experienceSkillScore * conditionFactor`、希望加点ありは後述の順序で総合点を算出する
   - `WARNING` 0件: 1.00
   - `WARNING` 1件: 0.90
   - `WARNING` 2件: 0.80
@@ -53,8 +54,12 @@
 experienceSkillScore = 必須一致率×0.8＋尚可一致率×0.2（片側0件規定は従来どおり）
 desiredSkillBonus = min(0.10, 希望必須一致数×0.03＋希望尚可一致数×0.01)
 skillScore = min(1.0, experienceSkillScore＋desiredSkillBonus)
-score = skillScore×conditionFactor
+score = min(1.0, experienceSkillScore×conditionFactor＋desiredSkillBonus)
 ```
+
+`skillScore` はAPI互換と加点後スキル評価の参照用に保持するが、総合点はこれへ条件係数を掛けない。
+希望加点を条件係数の適用後に加えることで、経験スキルが100点の組でも希望加点が消えず、加点幅も
+条件係数で縮小しない。最終的な `score` のみ100点を上限とする。
 
 希望だけが一致して経験スキルの共通項がない案件も計算対象に含める。ただし経験点は0のままなので、
 希望だけで高順位にはならない。希望の変更時は既存の10分キャッシュを無効化する。

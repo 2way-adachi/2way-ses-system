@@ -358,7 +358,8 @@ MVP向けの論理データモデルを整理する。
   - `WARNING` 1件: 0.90
   - `WARNING` 2件: 0.80
   - `WARNING` 3件以上: 0.70
-- `score` は総合点を表し、`score = skill_score * condition_factor` で算出する
+- `score` は総合点を表す。希望加点導入後は
+  `score = min(1.0, experience_skill_score * condition_factor + desired_skill_bonus)` で算出する
 - 条件適合に `NG` が1件でも含まれる場合はマッチング対象外とする
 - `condition_checks` は単価、稼働形態、稼働開始時期、年齢、商流、外国籍可否、個人事業主、経験年数の項目別判定と理由を保持する（2026-08-18 決定#25・#26）
   - 単価、稼働形態、稼働開始時期、年齢、商流: OK / WARNING / NG
@@ -471,7 +472,8 @@ matchings
   根拠の凍結は提案作成時の `proposals.match_snapshot` が担う）
 - `proposals.match_snapshot` には、必須/尚可スキルの一致状況、`skill_score`、`condition_factor`、`score`、7軸の
   `condition_checks`（判定結果と理由）を含める
-- `match_snapshot` は**バージョン番号を持つ構造化形式（v2）**とする（2026-08-18 決定#25）。
+- `match_snapshot` は**バージョン番号を持つ構造化形式**とする。v2は旧加算順、v3は希望加点を
+  条件係数適用後に加える現行形式（2026-08-28 決定#50）。v1/v2は変更せず読み取り互換を維持する
   既存提案のv1（一致スキルの文字列配列）は再凍結・移行せず従来どおり表示する（既存データは一切変更しない）
 - `proposals` に `matching_id`（NULL可）を追加し、承認済みマッチングから提案を作成した場合に紐づける
 - 承認/見送りの操作は**メンバー詳細（要員詳細）のマッチングタブ**に置く。マッチング一覧は閲覧・絞り込み専用

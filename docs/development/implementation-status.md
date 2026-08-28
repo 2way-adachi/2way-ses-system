@@ -79,18 +79,19 @@ Lavender／thyme上のSES機能の現状を記録する。**要件ではなく�
 - メンバー登録済み要員は、やりたい技術が案件の必須スキルに一致するごとに3点、尚可スキルに一致するごとに1点を加点する。
   同じ技術が必須・尚可の両方にある場合は必須のみとし、加点上限は10点。未経験の希望技術は経験上の一致や不足解消には使わない。
   `desiredSkillBonus = min(0.10, 必須一致数×0.03 + 尚可一致数×0.01)`、
-  `skillScore = min(1.0, experienceSkillScore + desiredSkillBonus)`。メール要員と希望未登録メンバーは従来どおり
+  `skillScore = min(1.0, experienceSkillScore + desiredSkillBonus)` を内訳値として保持し、総合点は
+  `score = min(1.0, experienceSkillScore * conditionFactor + desiredSkillBonus)`。メール要員と希望未登録メンバーは従来どおり
 - conditionChecks 7軸（単価・稼働形態・開始時期・年齢・商流=OK/WARNING/NG、外国籍・個人事業主=OK/NG）、
   各軸に日本語の理由。単価は対の値が揃えば部分判定（上限のみ記載の案件でも判定）
 - 開始時期は計算月に応じて動的判定（2026-08-27実装）。未来の開始可能月は同月案件=OK・後=WARNING・前=NG、
   開始可能月到来済み／要員即日は当月・翌月案件=OK、翌々月以降=WARNING。案件即日は要員が翌月開始までOK。
   要員メールに稼働ステータスやLLM抽出項目は追加せず、既存の`start_ym`・`start_text`から都度導出する
-- NG1件で候補から除外。conditionFactor=1.00/0.90/0.80/0.70、score=skillScore×conditionFactor
+- NG1件で候補から除外。conditionFactor=1.00/0.90/0.80/0.70。希望加点は条件係数適用後に加え、最終scoreは100点上限
   （小数第2位丸め・表示は0〜100点）。ソートはscore降順→一致数降順。
   案件→候補要員は上位20件のまま。要員→適合案件は上位20件固定を撤廃し全件対象+サーバーページング
   （status/unproposedOnly/projectTitle/scoreMin/page/size、レスポンスは{items,total}。
   各行にmailReceivedAt=元メール受信日時を追加。2026-08-25実装・未コミット）
-- match_snapshotはversion付きv2で凍結（既存v1は無移行で従来表示）
+- match_snapshotはversion付きv3で凍結。既存v1は従来表示、v2は旧加算順の内訳表示を維持する
 - 実装メモ: 要員側の remote_preference・preferred_location は skill_sheets 側のカラムのため
   紐付きスキルシート経由で取得（未紐付けは「判定材料なし」でOK通過）
 - フロントは総合点1軸＋内訳テーブル（skillScore×conditionFactor・条件別status/理由・場所参考行）を
