@@ -286,7 +286,7 @@ E1〜E4を実装対象、E5は起票のみ（2026-08-26 人間GO）
 
 ## G. バグ（2026-08-27 起票）
 
-- [ ] **G1. thyme再起動でメール取込runが「実行中」のまま宙吊りになり、画面が永久ロックされる**（起票のみ・実装待ち）
+- [x] **G1. thyme再起動でメール取込runが「実行中」のまま宙吊りになり、画面が永久ロックされる**（**修正済み 2026-08-27・thyme 69d807d**）
   - 実害: 2026-08-27 ステージングで発生。取込実行中（run24, 08:48開始）にthymeを再デプロイ→
     プロセスkillでrun完了処理が走らず、`mail_import_runs.finished_at` がNULLのまま残留。
     画面の「実行中」判定は `finished_at IS NULL`（`MailImportController.java:185-187`）のため
@@ -297,3 +297,14 @@ E1〜E4を実装対象、E5は起票のみ（2026-08-26 人間GO）
     （エラーメッセージ「プロセス再起動により中断」等）。単一インスタンス運用前提なら起動時クローズで十分。
     複数インスタンス化する場合はDBロック/ハートビート方式の再検討が必要
   - 対象: thyme（lemongrass）。取込済みメールはMessage-ID重複排除があるため再実行に害はない
+
+- [x] **G2. lemongrassのテスト失敗2件の原因調査**（2026-08-27起票→**2026-08-28解消済み**。Matchingはテスト修正 thyme 04d1a6f・TrackerはJDK11運用是正。JDK11フルスイート1461件PASS）
+  - `MatchingServiceTest$Result.highlightsPersonnelOnLateStart`: **7068315「開始時期を計算月に応じて判定」への
+    テスト未追随**。新仕様は月単位比較のため、案件2026-09-01 vs 参画可能2026-09-15は同月=OKになるが、
+    テストは旧仕様のWARNING+personnel強調を期待。MatchScoreCalculatorTestは更新済みで本テストのみ漏れ。
+    固定日付使用のため月が進むと挙動が変わる日付依存も併存 → **担当メンバーへ差し戻し（テスト側修正）**
+  - `TrackerAdminClientTest$RequestBody.includesOperatorInBody`: **テスト実行JDKの誤り（JDK17）が原因で、
+    テスト自体は正しい**。JaCoCo 0.8.6（JDK17非対応）のエージェント下でlocalhostスタブへの接続が
+    タイムアウトする（argLine上書きでjacocoを外すと5/5 PASS・jacocoありJDK17は8/8失敗・JDK11なら9/9 PASS）。
+    対処: **テストはpom指定どおりJDK11で実行**（運用是正済み）。恒久対応としてjacoco 0.8.8+への更新を推奨
+  - 裏取り: JDK11フルスイート1461件で失敗はMatching1件のみ（2026-08-28実測）
