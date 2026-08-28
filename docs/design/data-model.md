@@ -3,10 +3,10 @@
 MVP向けの論理データモデルを整理する。
 
 - 作成日: 2026-08-03
-- 更新日: 2026-08-21（最新実装のエンティティ名とC8の扱いを追記）
+- 更新日: 2026-08-28（やりたい技術の保持方法を追記）
 - **ステータス: 論理モデル。物理構成とカラム定義は thyme `docs/ddl/schema-ses.sql` を正とする。**
 
-> 物理DDLは thyme `docs/ddl/schema-ses.sql`（17テーブル統合版、2026-08-09統合）が現状の正。
+> 物理DDLは thyme `docs/ddl/schema-ses.sql`（やりたい技術テーブルを含む統合版）が現状の正。
 > 実装との対応は [実装現状の記録](../development/implementation-status.md) を参照。
 
 ## 0. 配置方針（2026-08-04 決定）
@@ -36,6 +36,7 @@ MVP向けの論理データモデルを整理する。
 | `skill_sheet_careers` | 職歴 |
 | `career_phases` | 職歴ごとの担当工程 |
 | `skill_sheet_skills` | スキル（スキル名を直接保持） |
+| `skill_sheet_desired_skills` | やりたい技術（スキルマスタ参照、最大5件） |
 | `qualifications` | 資格 |
 | `skill_sheet_drafts` | スキルシート編集中の下書き |
 | `projects` | 案件メールから取得した案件 |
@@ -157,6 +158,18 @@ MVP向けの論理データモデルを整理する。
   で、本節の「文字列比較」前提とは異なる（[実装現状の記録](../development/implementation-status.md)。要すり合わせ）
 - `experience_months` / `last_used_date` の自動集計はMVPでは必須としない
 - 職歴ごとの使用技術は `skill_sheet_careers.technology` に文字列で保持する
+
+### 2.4.1 skill_sheet_desired_skills
+
+経験の有無とは独立した「やりたい技術」を保持する。
+
+- `skill_sheet_id`
+- `skill_id`（`skills.skill_id`。外部キー制約は張らない）
+- `display_order`
+- 主キーは `skill_sheet_id + skill_id`
+- 画面・APIで最大5件に制限する
+- `skill_sheet_skills`や`personnel_skills`には混ぜず、未経験の希望を保有スキルとして扱わない
+- 登録済みメンバーのマッチング希望加点にだけ使用し、メール要員には持たせない
 
 ### 2.5 qualifications
 
@@ -413,6 +426,7 @@ MVP向けの論理データモデルを整理する。
 ```text
 members 1 --- 0..1 skill_sheets 1 --- * skill_sheet_careers 1 --- * career_phases
              +--- * skill_sheet_skills   （スキル名を直接保持。マスタなし）
+             +--- * skill_sheet_desired_skills （やりたい技術。skillsを参照、最大5件）
              +--- * qualifications
              +--- * skill_sheet_drafts   （ユーザー×シート単位。正式保存/キャンセルで削除）
 
@@ -483,7 +497,7 @@ matchings
 | 論理削除 | **行わない**（物理削除）。`skill_sheets.status` は 0:未公開 / 1:公開済み | 08-05 |
 | 社員番号 | 4桁（実データ2桁。拡張分を確保）。重複不可 | 08-05 |
 | 外部キー制約 | 張らない（既存fukuroに準拠）。整合性はアプリ側で担保 | 08-05 |
-| DDLの統合 | スキルシート系＋マッチング・提案系＋メール系を**17テーブルの統合版DDLに一本化**（実装ベース） | 08-09 |
+| DDLの統合 | スキルシート系＋マッチング・提案系＋メール系を統合版DDLに一本化（実装ベース）。2026-08-28に`skill_sheet_desired_skills`を追加 | 08-09 / 08-28 |
 | 勤怠提出元 | 職歴単位 → **`skill_sheets` のシート単位に変更**。NULL可 | 08-12 |
 | 必須カラム | `skill_sheets` の `gender` / `birth_date` / `prefecture` / `city` を NOT NULL 化 | 08-12 |
 

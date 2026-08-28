@@ -50,6 +50,23 @@ PUT  /ses/personnel/{id}                 更新
   前提にしており、省略するとクラッシュする。projects一覧も同様）。フロント側も防御的に
   `skills ?? []` で扱うこと（二重防御）
 
+### スキルシートのやりたい技術
+
+既存の `POST /skill-sheet/detail` のレスポンスと `POST /skill-sheet/edit` のリクエストへ、
+`desiredSkills` を追加する。
+
+```json
+"desiredSkills": [
+  { "skillId": 10, "skillName": "Java" },
+  { "skillId": 25, "skillName": "AWS" }
+]
+```
+
+- 最大5件。編集リクエストでは `skillId` を保存に使用し、`skillName` は表示用とする
+- スキルマスタに存在する項目だけを画面から選択する。配列順を表示順として保持する
+- 詳細レスポンスの `skillName` は保存値ではなく、現在のスキルマスタ正規名から返す
+- 未指定または空配列は希望加点なし。既存の経験スキル `skills[]` とは独立して扱う
+
 ## 案件 projects
 
 ```
@@ -93,6 +110,8 @@ GET /ses/personnel/{id}/matches          要員→適合案件
                    "nearestStation": "品川", "preferredLocation": "東京23区" },
     "score": 0.58,
     "skillScore": 0.72,
+    "experienceSkillScore": 0.68,
+    "desiredSkillBonus": 0.04,
     "conditionFactor": 0.80,
     "matchedSkills": [ { "name": "Java", "years": 5 }, { "name": "Spring Boot", "years": null } ],
     "missingSkills": ["AWS"],
@@ -108,12 +127,19 @@ GET /ses/personnel/{id}/matches          要員→適合案件
     "reason": null } ] }
 ```
 
-- スキル評価: 必須スキル一致率を80%、尚可スキル一致率を20%として `skillScore` を算出する
+- 経験スキル評価: 必須スキル一致率を80%、尚可スキル一致率を20%として `experienceSkillScore` を算出する
   - 必須スキル一致率 = 一致した必須スキル数 / 必須スキル総数
   - 尚可スキル一致率 = 一致した尚可スキル数 / 尚可スキル総数
-  - `skillScore = 必須スキル一致率 * 0.8 + 尚可スキル一致率 * 0.2`
-  - 片側の総数が0件の場合はもう片方の一致率をそのまま `skillScore` とする
+  - `experienceSkillScore = 必須スキル一致率 * 0.8 + 尚可スキル一致率 * 0.2`
+  - 片側の総数が0件の場合はもう片方の一致率をそのまま `experienceSkillScore` とする
     （尚可0件なら必須一致率×1.0、必須0件なら尚可一致率×1.0。両方0件は0）
+- 本人希望加点（2026-08-28）:
+  - 対象はスキルシートを持つ登録済みメンバーのみ。メール要員・希望未登録は0
+  - `desiredSkillBonus = min(0.10, 希望スキルの必須一致数 * 0.03 + 尚可一致数 * 0.01)`
+  - 同一スキルが必須・尚可双方にある場合は必須一致だけを数える
+  - `skillScore = min(1.0, experienceSkillScore + desiredSkillBonus)`
+  - 希望スキルは経験の一致・不足、要求経験年数の判定には使わない
+  - 希望だけが共通するペアも前置フィルタを通して評価する
 - 条件適合は `conditionChecks` に項目別の判定と理由を保持する（9軸。2026-08-18 決定#25・#26／2026-08-19 決定#34）
   - `price` / `workStyle` / `startDate` / `age` / `commercialFlow`: `OK` / `WARNING` / `NG`
   - `nationality` / `freelancer`（個人事業主）: `OK` / `NG`
@@ -283,7 +309,8 @@ PATCH /ses/proposals/{id}                { status?, proposalText?, interviewAt?,
 - 提案一覧のユースケース（2026-08-07 人間イメージ）: **「今どこの案件に誰が提案中で、いつ面談で、
   ステータスがどうか」を横断で一覧できること**。一覧のデフォルトは進行中（lost/withdrawn/joined以外）を
   status順・interviewAt昇順で表示
-- `matchSnapshot`: 作成時点の candidates 該当行を凍結保存（JSON）
+- `matchSnapshot`: 作成時点の candidates 該当行を凍結保存（JSON）。2026-08-28以降の新規保存分は
+  `experienceSkillScore` と `desiredSkillBonus` も保持する（既存スナップショットは未設定のまま後方互換）
 
 ## スキルマスタ
 
