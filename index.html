@@ -286,6 +286,13 @@ table.tbl td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:
 .proposal-info .info-row{margin-bottom:10px}.proposal-info .info-label{display:block;font-size:11px;color:var(--fg-muted);margin-bottom:2px}
 .proposal-form{display:flex;flex-direction:column;gap:12px}.proposal-form .field{min-width:0}
 .snapshot{margin-top:16px;border-top:1px solid var(--border);padding-top:12px}
+.snapshot-score{font-size:13px;margin:0 0 8px}
+.snapshot-breakdown{margin-top:8px}
+.snapshot-breakdown tbody tr{cursor:default}
+.snapshot-breakdown tbody tr:hover{background:transparent}
+.snapshot-breakdown td:first-child{width:130px;color:var(--fg-muted);font-size:12px}
+.snapshot-breakdown td:nth-child(2){width:90px}
+.snapshot-breakdown td:last-child{font-size:12px}
 .dialog-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:1300;display:grid;place-items:center;padding:24px}
 .dialog-panel{background:#fff;border-radius:4px;box-shadow:var(--shadow-lg);width:min(1120px,96vw);max-height:88vh;overflow:auto}
 .dialog-title{padding:18px 24px;font-size:20px;border-bottom:1px solid var(--border)}
@@ -429,6 +436,7 @@ table.tbl tbody tr:hover,.ses-row:hover{background:rgba(63,81,181,.08)}
    ダミーデータ（要件の管理項目に対応）
    ========================================================= */
 const PHASES = ["要件定義","基本設計","詳細設計","設計構築","製造","テスト","運用保守","サポート"];
+const DESIRED_SKILL_OPTIONS = ["Java","Spring Boot","TypeScript","React","Next.js","AWS","Python","Kubernetes","Terraform","C#","Go"];
 
 const SHEETS = [
   {
@@ -556,12 +564,22 @@ SHEETS.push(
   {id:7,code:"0078",name:"小林 佳奈",kana:"コバヤシ カナ",gender:"女性",birth:"1991-09-21",pref:"神奈川県",city:"川崎市",station:"武蔵小杉",education:"□□大学 卒業",empStatus:"待機中",price:"72万円",prefLoc:"東京・神奈川",remote:"フルリモート希望",intention:"積極的に検討",updated:"2026-08-12",status:"公開",skills:[{name:"TypeScript",cat:"言語",months:60,last:"2026-07"},{name:"React",cat:"FW",months:60,last:"2026-07"},{name:"Next.js",cat:"FW",months:36,last:"2026-07"}],quals:[],careers:[{start:"2021-04",end:"2026-07",current:false,project:"ECサイトフロントエンド開発",desc:"Reactを用いた画面開発とコンポーネント設計。",role:"リード",team:6,env:"Vercel",tech:"TypeScript, React, Next.js",phases:["基本設計","詳細設計","製造","テスト"],attendanceSubmissionSource:"upper_company",remarks:""}],pr:"TypeScriptとReactを軸にフロントエンド開発を経験しています。"}
 );
 
+const DEFAULT_DESIRED_SKILLS = {
+  1:["AWS","Kubernetes"], 2:["AWS","Vue.js"], 3:["AWS","Python"],
+  4:["React"], 5:["Kotlin"], 6:["Terraform"], 7:["AWS"]
+};
+function ensureDesiredSkills(){
+  SHEETS.forEach(s=>{
+    if(!Array.isArray(s.desiredSkills)) s.desiredSkills = [...(DEFAULT_DESIRED_SKILLS[s.id] || [])];
+  });
+}
+
 const PROJECTS = [
   {id:101,name:"金融系基幹システム刷新 詳細設計〜製造",start:"即日、9月〜",required:["Java","Spring Boot","Oracle"],client:"大手SIer"},
   {id:102,name:"ECサイトリプレイス フロントエンド開発",start:"即日",required:["React","TypeScript","Next.js"],client:"Webサービス企業"},
   {id:103,name:"物流管理システム新規開発 PM候補",start:"9月〜",required:["PM","Java","AWS"],client:"物流系事業会社"},
   {id:104,name:"医療系Webアプリ バックエンド開発",start:"即日、8月〜",required:["Python","Django","PostgreSQL"],client:"医療系スタートアップ"},
-  {id:105,name:"製造業向けIoT基盤構築 インフラ設計",start:"9月〜",required:["AWS","Terraform","Docker","Kubernetes"],client:"製造業エンド"},
+  {id:105,name:"製造業向けIoT基盤構築 インフラ設計",start:"9月〜",required:["AWS","Terraform","Docker","Kubernetes"],preferred:["Python"],client:"製造業エンド"},
   {id:106,name:"モバイルアプリ開発 iOS/Android",start:"10月〜",required:["Swift","Kotlin","Flutter"],client:"アプリ開発会社"},
   {id:107,name:"社内基幹バッチ刷新 詳細設計〜テスト",start:"10月〜",required:["Java","Spring Batch","PostgreSQL"],client:"事業会社情報システム部"}
 ];
@@ -789,6 +807,39 @@ function proposalView(p){
   const matching = matchingView(MATCHINGS.find(m=>m.id===p.matchingId));
   return {...p, matching, project:matching.project, staff:matching.staff, staffInitial:matching.staffInitial};
 }
+function proposalSnapshotHtml(r){
+  const required = r.project.required || [];
+  const preferred = r.project.preferred || [];
+  const projectSkills = [...required,...preferred];
+  const matched = r.staff.skills.filter(skill=>projectSkills.includes(skill.name));
+  const matchedNames = new Set(matched.map(skill=>skill.name));
+  const missing = projectSkills.filter(name=>!matchedNames.has(name));
+  const desired = r.staff.desiredSkills || [];
+  const desiredRequired = desired.filter(name=>required.includes(name));
+  const desiredPreferred = desired.filter(name=>preferred.includes(name) && !required.includes(name));
+  const desiredBonus = Math.min(10,desiredRequired.length*3+desiredPreferred.length);
+  const conditionFactor = r.matching.score>=92 ? 1 : .9;
+  const experienceScore = Math.max(0,Math.min(100,Math.round((r.matching.score-desiredBonus)/conditionFactor)));
+  const projectMail = PROJECT_MAILS.find(mail=>mail.id===r.project.id);
+  const warningAxis = conditionFactor<1 ? "price" : "";
+  const conditionRows = [
+    ["price","単価",projectMail?.price&&r.staff.price?`案件 ${projectMail.price} / 要員希望 ${r.staff.price}`:"判定材料なし"],
+    ["workStyle","稼働形態",`案件 ${projectMail?.remote||"一部リモート"} / 要員希望 ${r.staff.remote||"指定なし"}`],
+    ["startDate","稼働開始時期",`案件 ${r.project.start||"未定"} / 要員 ${availableFrom(r.staff)}`],
+    ["age","年齢",`案件の年齢条件内 / 要員 ${ageText(r.staff.birth)}`],
+    ["commercialFlow","商流",memberType(r.staff)==="BP"?"案件条件と所属会社の商流を確認済み":"自社社員のため条件内"],
+    ["nationality","外国籍","日本国籍のため条件内"],
+    ["freelancer","個人事業主","それ以外のため条件内"],
+    ["skillYears","経験年数",matched.length?"一致スキルの要求経験年数を満たす":"判定対象の一致スキルなし"],
+    ["location","勤務地",`案件 ${projectMail?.location||"記載なし"} / 要員希望 ${r.staff.prefLoc||"指定なし"}`]
+  ];
+  const skillTags = matched.map(skill=>`<span class="tag" title="${esc(skill.name)}の概要">${esc(skill.name)}${skill.months!=null?`（${Math.max(1,Math.round(skill.months/12))}年）`:""}</span>`).join("")
+    + missing.map(name=>`<span class="tag gray" title="${esc(name)}の概要">不足: ${esc(name)}</span>`).join("");
+  return `<p class="snapshot-score">提案時点の点数: ${r.matching.score}点</p>
+    <div class="taglist">${skillTags||'<span class="sub">一致・不足スキルなし</span>'}</div>
+    <p class="sub" style="margin:8px 0 0">総合点の内訳: 経験スキル ${experienceScore}点 × 条件係数 ${conditionFactor.toFixed(2)} ＋ 希望加点 ${desiredBonus}点</p>
+    <table class="tbl snapshot-breakdown"><tbody>${conditionRows.map(([axis,label,reason])=>{const warning=axis===warningAxis;return `<tr><td>${esc(label)}</td><td><span class="chip ${warning?"warn":"pri"}">${warning?"注意":"OK"}</span></td><td>${esc(reason)}</td></tr>`}).join("")}</tbody></table>`;
+}
 function techText(project){ return project.required.join("、"); }
 function memberTabs(id, active){
   const tabs = [
@@ -831,6 +882,7 @@ function loadStoredSheets(){
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     if(Array.isArray(saved)) SHEETS.splice(0, SHEETS.length, ...saved);
   }catch(e){ console.warn("保存データを読み込めませんでした", e); }
+  ensureDesiredSkills();
 }
 function persistSheets(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(SHEETS));
@@ -1473,23 +1525,34 @@ function screenMatchingResult(id, origin="list", memberId=null){
   const r = matchingView(MATCHINGS.find(m=>m.id===id));
   if(!r){ screenMatchingList(); return; }
   matchingBackTarget={type:origin==="member"?"member":"list",memberId};
+  const candidate=[4,6].includes(r.id);
   const matched = r.project.required.filter(skill=>r.staff.skills.some(k=>k.name===skill));
   const missing = r.project.required.filter(skill=>!matched.includes(skill));
+  const desiredSkills = candidate ? [] : (r.staff.desiredSkills || []);
+  const desiredRequired = desiredSkills.filter(skill=>r.project.required.includes(skill));
+  const desiredPreferred = desiredSkills.filter(skill=>(r.project.preferred || []).includes(skill) && !r.project.required.includes(skill));
+  const desiredBonus = Math.min(10, desiredRequired.length * 3 + desiredPreferred.length);
+  const conditionFactor = 0.96;
+  const experienceSkillScore = Math.max(0, Math.min(100, Math.round((r.score - desiredBonus) / conditionFactor)));
+  const calculatedScore = Math.min(100, Math.round(experienceSkillScore * conditionFactor + desiredBonus));
+  const projectSkillRows = [
+    ...r.project.required.map(skill=>({skill,required:true})),
+    ...(r.project.preferred || []).map(skill=>({skill,required:false}))
+  ];
   const conditionRows = [
     ["単価","65〜75万円",r.staff.price||"—","OK"],["稼働形態","一部リモート",r.staff.remote||"—","OK"],
     ["開始時期",r.project.start,availableFrom(r.staff),"OK"],["年齢","45歳以下",ageText(r.staff.birth),"OK"],
     ["商流","2社先まで",memberType(r.staff)==="BP"?"1社先BP":"自社社員","OK"],["外国籍","不可","日本国籍","OK"],["個人事業主","不可","それ以外","OK"]
   ];
-  const candidate=[4,6].includes(r.id);
-  const projectMails=[PROJECT_MAILS.find(m=>m.id===r.project.id),...PROJECT_MAILS].filter((m,i,a)=>m&&a.findIndex(x=>x.id===m.id)===i).slice(0,2);
+  const projectMails=[PROJECT_MAILS.find(m=>m.id===r.project.id),...PROJECT_MAILS].filter(Boolean).filter((m,i,a)=>a.findIndex(x=>x.id===m.id)===i).slice(0,2);
   const staffMailBase=candidate?STAFF_MAILS[r.id===4?2:0]:STAFF_MAILS[(r.staff.id-1)%STAFF_MAILS.length];
-  const staffMails=[staffMailBase,...STAFF_MAILS].filter((m,i,a)=>m&&a.findIndex(x=>x.id===m.id)===i).slice(0,Math.max(2,staffMailBase?.duplicateCount||1));
+  const staffMails=[staffMailBase,...STAFF_MAILS].filter(Boolean).filter((m,i,a)=>a.findIndex(x=>x.id===m.id)===i).slice(0,Math.max(2,staffMailBase?.duplicateCount||1));
   main.innerHTML = `
   ${crumb([{label:"ホーム"},{label:"マッチング一覧",nav:"matching"},{label:`${r.project.name} × ${r.staff.name}`}])}
-  <div class="pagehead"><div><h1>${esc(r.project.name)} × ${esc(candidate?r.staffInitial:r.staff.name)} ${candidate?`<span class="chip">候補</span>${duplicateBadge(staffMailBase?.duplicateCount||1)}`:""}</h1><div class="acts" style="justify-content:flex-start;margin-top:8px"><strong style="font-size:20px">${r.score}点</strong><span class="sub">（スキル評価 ${Math.min(100,r.score+4)}点 × 条件係数 0.96）</span></div></div><div class="acts"><button class="btn" data-matching-back="1">戻る</button></div></div>
+  <div class="pagehead"><div><h1>${esc(r.project.name)} × ${esc(candidate?r.staffInitial:r.staff.name)} ${candidate?`<span class="chip">候補</span>${duplicateBadge(staffMailBase?.duplicateCount||1)}`:""}</h1><div class="acts" style="justify-content:flex-start;margin-top:8px"><strong style="font-size:20px">${calculatedScore}点</strong><span class="sub">（経験スキル ${experienceSkillScore}点 × 条件係数 ${conditionFactor.toFixed(2)} ＋ 希望加点 ${desiredBonus}点）</span></div></div><div class="acts"><button class="btn" data-matching-back="1">戻る</button></div></div>
   <div style="display:grid;grid-template-columns:minmax(0,7fr) minmax(340px,5fr);gap:16px" class="mail-detail-grid">
     <div><h2 style="font-size:16px">対比表</h2><div class="card"><div class="bd flush"><table class="tbl comparison-table"><thead><tr><th>区分</th><th>項目</th><th>案件</th><th>要員</th></tr></thead><tbody>
-      ${r.project.required.map((skill,i)=>{const k=r.staff.skills.find(x=>x.name===skill);return `<tr style="cursor:default">${i===0?`<td class="comparison-group skills" rowspan="${r.project.required.length}">スキル</td>`:""}<td class="comparison-subitem">${esc(skill)} <span class="chip pri">必須</span></td><td>必須</td><td${k?"":" style=\"background:#fff4e5\""}>${k?esc(months2y(k.months)):'<span class="chip warn">不足</span>'}</td></tr>`}).join("")}
+      ${projectSkillRows.map(({skill,required},i)=>{const k=r.staff.skills.find(x=>x.name===skill),wish=desiredSkills.includes(skill),bonus=required?3:1;return `<tr style="cursor:default">${i===0?`<td class="comparison-group skills" rowspan="${projectSkillRows.length}">スキル</td>`:""}<td class="comparison-subitem">${esc(skill)} <span class="chip ${required?"pri":"gray"}">${required?"必須":"尚可"}</span></td><td>${required?"必須":"尚可"}</td><td${k?"":" style=\"background:#fff4e5\""}>${k?esc(months2y(k.months)):'<span class="chip warn">不足</span>'}${wish?` <span class="chip ok">希望一致 +${bonus}点</span>`:""}</td></tr>`}).join("")}
       ${conditionRows.map((row,i)=>`<tr class="${i===0?"comparison-section-start":""}" style="cursor:default">${i===0?`<td class="comparison-group conditions" rowspan="${conditionRows.length}">条件</td>`:""}<td class="comparison-subitem">${esc(row[0])}</td><td>${esc(row[1])}</td><td>${esc(row[2])}</td></tr>`).join("")}
     </tbody></table></div></div></div>
     <div>${matchingMailFrame("案件メール",projectMails,"project")}${matchingMailFrame("要員メール",staffMails,"staff")}<div class="acts" style="display:flex;width:100%;gap:8px;margin-top:16px"><button class="btn danger" style="flex:1 1 50%;min-width:0;justify-content:center;text-align:center" data-match-dismiss="1">見送り</button><button class="btn primary" style="flex:1 1 50%;min-width:0;justify-content:center;text-align:center" data-proposal-create="${candidate?"candidate":"member"}">提案</button></div>${candidate?'<p class="sub">提案時にメンバーへ昇格します（名前はイニシャルのまま登録されます）。</p>':""}</div>
@@ -1595,7 +1658,7 @@ function screenDetail(id, tab="info"){
               </div>
             </div>
           </div>
-          <div class="snapshot"><button class="btn sm" data-snapshot-toggle="${r.id}">マッチング控え ▼</button><div class="hidden" data-snapshot="${r.id}" style="margin-top:12px"><div class="taglist">${r.staff.skills.filter(k=>r.project.required.includes(k.name)).map(k=>`<span class="tag">${esc(k.name)}</span>`).join("")}</div><p class="sub">提案作成時点のマッチング結果を保存しています。</p></div></div>
+          <div class="snapshot"><button class="btn ghost sm" data-snapshot-toggle="${r.id}">マッチング控え <span data-snapshot-icon>▼</span></button><div class="hidden" data-snapshot="${r.id}" style="margin-top:8px">${proposalSnapshotHtml(r)}</div></div>
         </div>
       </div>`;
     }).join("") || `<div class="card"><div class="bd"><div class="empty">提案履歴がありません</div></div></div>`}`;
@@ -1638,7 +1701,7 @@ function screenDetail(id, tab="info"){
   ${memberDetailHeader(s)}
 
   ${tabs}
-  <div class="acts" style="justify-content:space-between;margin-bottom:16px"><div class="acts"><span class="chip">${esc(s.status)}</span><span class="sub">${esc(s.code)}／最終更新 ${esc(s.updated)}</span></div><button class="btn primary" data-edit="${s.id}">編集</button></div>
+  <div class="acts" style="display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-bottom:16px"><div class="acts" style="display:flex;align-items:center;gap:8px"><span class="chip">${esc(s.status)}</span><span class="sub">${esc(s.code)}／最終更新 ${esc(s.updated)}</span></div><button class="btn primary" style="margin-left:auto" data-edit="${s.id}">編集</button></div>
 
   <div class="card">
     <div class="hd"><h2>基本情報</h2></div>
@@ -1680,6 +1743,14 @@ function screenDetail(id, tab="info"){
       </div>
       <p class="sub" style="font-size:11.5px;color:var(--fg-muted);margin:.6rem 0 0">
         ※ MVPでは経験期間・最終利用時期の自動集計は必須としないため、手入力値を表示しています。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="hd"><h2>やりたい技術</h2><span class="chip">${(s.desiredSkills || []).length} 件</span></div>
+    <div class="bd">
+      <p class="sub" style="margin-top:0">経験の有無とは別に、今後取り組みたい技術を登録します。マッチングでは必須一致3点・尚可一致1点、合計最大10点を加点します。</p>
+      <div class="taglist">${(s.desiredSkills || []).length ? s.desiredSkills.map(name=>`<span class="tag">${esc(name)}</span>`).join("") : '<span class="sub">未登録</span>'}</div>
     </div>
   </div>
 
@@ -1744,8 +1815,9 @@ function screenEdit(id, mode){
   editState = src ? JSON.parse(JSON.stringify(src)) : {
     id:null, code:"", name:"", kana:"", gender:"", birth:"", pref:"", city:"", station:"",
     education:"", empStatus:"待機中", price:"", prefLoc:"", remote:"", intention:"",
-    updated:"2026-08-03", status:"下書き", skills:[], quals:[], careers:[], pr:""
+    updated:"2026-08-03", status:"下書き", skills:[], desiredSkills:[], quals:[], careers:[], pr:""
   };
+  if(!Array.isArray(editState.desiredSkills)) editState.desiredSkills=[];
   if(mode === "dup"){ editState.id = null; editState.code = ""; editState.name = src.name + "（複製）"; }
   editState._mode = mode || (id ? "edit" : "new");
   editTab = "skill";
@@ -1808,6 +1880,15 @@ function renderTab(){
   if(editTab === "skill"){
     body.innerHTML = `
     <div class="card">
+      <div class="hd"><h2>やりたい技術</h2><span class="chip">${e.desiredSkills.length} / 5 件</span></div>
+      <div class="bd">
+        <p class="sub" style="margin-top:0">経験の有無に関わらず、今後取り組みたい技術をスキルマスタから最大5件選択してください。必須一致3点・尚可一致1点、合計最大10点を加点します。</p>
+        <div class="filters" style="align-items:flex-end"><div class="field"><label>スキルマスタから選択</label><select class="ctl" id="desiredSkillSelect"><option value="">選択してください</option>${DESIRED_SKILL_OPTIONS.filter(name=>!e.desiredSkills.includes(name)).map(name=>`<option>${esc(name)}</option>`).join("")}</select></div><button class="btn primary" id="addDesiredSkill" ${e.desiredSkills.length>=5?"disabled":""}>追加</button></div>
+        <div class="taglist" style="margin-top:12px">${e.desiredSkills.length?e.desiredSkills.map((name,i)=>`<span class="tag">${esc(name)} <button class="linklike" style="padding:0;margin-left:4px" data-deldesired="${i}" aria-label="${esc(name)}を削除">×</button></span>`).join(""):'<span class="sub">やりたい技術は未登録です。</span>'}</div>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="hd"><h2>スキル</h2><div class="acts"><button class="btn sm primary" id="addSkill">＋ スキルを追加</button></div></div>
       <div class="bd flush">
         <div class="tbl-scroll"><table class="tbl">
@@ -1847,6 +1928,8 @@ function renderTab(){
       </div>
     </div>`;
 
+    $("#addDesiredSkill").onclick = () => { const name=$("#desiredSkillSelect").value;if(name&&e.desiredSkills.length<5&&!e.desiredSkills.includes(name)){syncEditState();e.desiredSkills.push(name);scheduleDraftSave();renderTab();} };
+    body.querySelectorAll("[data-deldesired]").forEach(b=>b.onclick=()=>{syncEditState();e.desiredSkills.splice(+b.dataset.deldesired,1);scheduleDraftSave();renderTab();});
     $("#addSkill").onclick = () => { syncEditState(); e.skills.push({name:"",cat:"言語",months:0,last:"",note:""}); renderTab(); };
     $("#addQual").onclick  = () => { syncEditState(); e.quals.push({name:"",date:"",note:""}); renderTab(); };
     body.querySelectorAll("[data-delskill]").forEach(b=>b.onclick=()=>{ syncEditState(); e.skills.splice(+b.dataset.delskill,1); renderTab(); });
@@ -2015,7 +2098,7 @@ document.addEventListener("click", ev => {
     screenDetail(+t.dataset.proposalMember,"proposal");
     return;
   }
-  if(t.dataset.snapshotToggle){ const box=document.querySelector(`[data-snapshot="${t.dataset.snapshotToggle}"]`); box?.classList.toggle("hidden"); return; }
+  if(t.dataset.snapshotToggle){ const box=document.querySelector(`[data-snapshot="${t.dataset.snapshotToggle}"]`); const hidden=box?.classList.toggle("hidden"); const icon=t.querySelector("[data-snapshot-icon]"); if(icon) icon.textContent=hidden?"▼":"▲"; return; }
   if(t.dataset.projectMailOpen){ screenProjectMailDetail(+t.dataset.projectMailOpen); return; }
   if(t.dataset.staffMailOpen){ screenStaffMailDetail(+t.dataset.staffMailOpen); return; }
   if(t.dataset.manageUserNew){ screenManageUserEdit(); return; }
