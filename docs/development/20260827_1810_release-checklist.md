@@ -13,6 +13,12 @@
 
 ## 1. DDL（sesスキーマ初構築）
 
+> **実行キット準備済み（2026-08-29）**: 本節と§5の実行用SQL一式+手順書をローカル
+> `C:\Users\hp\Documents\work\release_ses_20260829\` に配置
+> （01_schema-ses.sql=matching_results/host列込み最新・02_setup-ses-user.sql・
+> 03_skill-master-data.sql=devDBから生成・README_リリースDB手順.md）。
+> 接続情報を含むファイルは置かない運用。実行は人間がrootで行う
+
 - [ ] スキーマ+ユーザー作成: `docs/ddl/setup-ses.sql`（gitignore対象・ローカル保持。
       2026-08-27にgit履歴d0912b2^から復元済み。パスワードCHANGE_MEを本番用に置換して実行）
 - [ ] `docs/ddl/schema-ses.sql`（スナップショット版・21テーブル）を ses ユーザーで実行。
