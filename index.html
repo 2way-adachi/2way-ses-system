@@ -1511,7 +1511,6 @@ function screenMemberEdit(id){
     <div class="field"><label>最終学歴</label><input class="ctl" value="${esc(v.education)}"></div><div class="field"><label>希望勤務地</label><input class="ctl" value="${esc(v.prefLoc)}"></div>
     <div class="field"><label>リモート希望</label><select class="ctl"><option>${esc(v.remote||"未設定")}</option><option>出社可</option><option>フルリモート希望</option></select></div><div class="field"><label>勤怠提出元</label><select class="ctl"><option>上位会社</option><option>参画中メンバー</option></select></div>
   </div></div></div>
-  ${s ? `<div class="card"><div class="hd"><h2>スキルシート</h2></div><div class="bd"><p>紐付け済み: ${esc(s.name)} のスキルシート</p><button class="btn">スキルシートを選択</button></div></div>` : ""}
   <div class="card"><div class="hd"><h2>ログインユーザー紐付け</h2><p class="sub">紐付けたユーザーは、一般ロールでログインしたときにこのメンバーのスキルシートを開けます</p></div><div class="bd"><div class="field"><label>ログインユーザー</label><select class="ctl"><option>紐付けなし</option><option${s?' selected':''}>${s?`${esc(s.name)}（${esc(s.email||"member@example.co.jp")}）`:"営業部 田中（tanaka@example.co.jp）"}</option></select></div></div></div>
   <div class="acts" style="justify-content:flex-start"><button class="btn primary" data-member-save="${id||"new"}">保存</button><button class="btn" data-nav="members">キャンセル</button></div>`;
 }
