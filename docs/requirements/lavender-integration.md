@@ -57,7 +57,7 @@ SES
 | メンバー一覧 | `/member` | メンバー検索・一覧 |
 | メンバー新規登録 | `/member/new` | 基本情報とスキルの登録（既存スキルシートの紐付けは行わない） |
 | メンバー詳細 | `/member/:id?tab=info\|skill-sheet\|matching\|proposal` | 4タブの統合詳細 |
-| メンバー編集 | `/member/:id/edit` | 基本情報、スキル、シート紐付けの編集 |
+| メンバー編集 | `/member/:id/edit` | 基本情報・希望条件・ログインユーザー紐付けを編集。スキルシートの選択・解除は行わず、既存の紐付けを維持（2026-08-31更新） |
 | スキルシート新規 | `/member/:memberId/skill-sheet/new` | 対象メンバーのシート作成 |
 | スキルシート編集 | `/member/:memberId/skill-sheet/:id/edit` | 対象メンバーのシート編集 |
 | マッチング一覧 | `/matching` | 同一案件グループを含む結果一覧 |
